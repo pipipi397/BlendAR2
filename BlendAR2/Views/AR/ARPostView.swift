@@ -35,7 +35,7 @@ struct ARPostView: View {
                 addImageToARView(image)
             }
         }
-
+        
     }
     
     func addImageToARView(_ image: UIImage) {
@@ -61,18 +61,31 @@ struct ARPostView: View {
         let anchor = AnchorEntity(world: [0, 0, -1])
         anchor.addChild(entity)
         arView.scene.addAnchor(anchor)
+        
+        // Firestoreに画像と位置を保存
+        let position = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
+        PostManager.shared.uploadPost(image: image, position: position) { result in
+            switch result {
+            case .success:
+                print("投稿が完了しました")
+            case .failure(let error):
+                print("投稿に失敗しました: \(error.localizedDescription)")
+            }
+        }
+    }
+    
+    
+    struct ARViewContainer: UIViewRepresentable {
+        @Binding var arView: ARView
+        
+        func makeUIView(context: Context) -> ARView {
+            let config = ARWorldTrackingConfiguration()
+            config.planeDetection = [.horizontal]
+            arView.session.run(config)
+            return arView
+        }
+        
+        func updateUIView(_ uiView: ARView, context: Context) {}
     }
 }
 
-struct ARViewContainer: UIViewRepresentable {
-    @Binding var arView: ARView
-    
-    func makeUIView(context: Context) -> ARView {
-        let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal]
-        arView.session.run(config)
-        return arView
-    }
-    
-    func updateUIView(_ uiView: ARView, context: Context) {}
-}

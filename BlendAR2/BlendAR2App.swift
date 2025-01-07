@@ -1,15 +1,17 @@
 import SwiftUI
-import Firebase
 
 @main
-struct BlendARApp: App {
-    init() {
-        FirebaseApp.configure()
-    }
-    
+struct BlendAR2App: App {
+    @StateObject private var authManager = AuthManager.shared
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if authManager.isLoggedIn {
+                MainView()
+            } else {
+                LoginView()
+            }
         }
     }
 }
+

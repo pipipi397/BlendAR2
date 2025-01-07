@@ -9,6 +9,7 @@ target 'BlendAR2' do
   pod 'Firebase/Analytics'
   pod 'GoogleUtilities'
   pod 'GTMSessionFetcher'
+  pod 'Firebase/Storage'
 
   # Pods全体にデプロイメントターゲットを強制
   post_install do |installer|
@@ -18,10 +19,9 @@ target 'BlendAR2' do
         config.build_settings['IPHONEOS_DEPLOYMENT_TARGET'] = '15.0'
         
         # OTHER_LDFLAGSの重複を防止
-        if config.build_settings['OTHER_LDFLAGS'].is_a?(Array)
+        if config.build_settings['OTHER_LDFLAGS']
+          config.build_settings['OTHER_LDFLAGS'] = Array(config.build_settings['OTHER_LDFLAGS'])
           config.build_settings['OTHER_LDFLAGS'] = config.build_settings['OTHER_LDFLAGS'].uniq
-        elsif config.build_settings['OTHER_LDFLAGS'].is_a?(String)
-          config.build_settings['OTHER_LDFLAGS'] = config.build_settings['OTHER_LDFLAGS'].split(' ').uniq.join(' ')
         end
       end
     end

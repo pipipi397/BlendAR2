@@ -1,25 +1,20 @@
 import UIKit
 import SwiftUI
-import FirebaseAuth
 
 class SceneDelegate: UIResponder, UIWindowSceneDelegate {
+
     var window: UIWindow?
-    
-    func scene(_ scene: UIScene,
-               willConnectTo session: UISceneSession,
-               options connectionOptions: UIScene.ConnectionOptions) {
-        
-        let contentView: AnyView
-        
-        // ログイン状態を確認
-        if Auth.auth().currentUser != nil {
-            // ログイン済みならメイン画面
-            contentView = AnyView(MainView())
+    private var authManager = AuthManager.shared
+
+    func scene(_ scene: UIScene, willConnectTo session: UISceneSession, options connectionOptions: UIScene.ConnectionOptions) {
+        let contentView: AnyView  // AnyViewを使用
+
+        if authManager.isLoggedIn {
+            contentView = AnyView(MainView())  // AnyViewで包む
         } else {
-            // 未ログインならログイン画面
             contentView = AnyView(LoginView())
         }
-        
+
         if let windowScene = scene as? UIWindowScene {
             let window = UIWindow(windowScene: windowScene)
             window.rootViewController = UIHostingController(rootView: contentView)
