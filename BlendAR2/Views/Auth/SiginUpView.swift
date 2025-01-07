@@ -1,50 +1,55 @@
 import SwiftUI
 
 struct SignUpView: View {
-    @State private var email: String = ""
-    @State private var password: String = ""
-    @State private var errorMessage: String?
+    @State private var email = ""
+    @State private var password = ""
+    @State private var displayName = ""
+    @State private var errorMessage = ""
 
     var body: some View {
-        VStack {
-            Text("新規登録")
-                .font(.largeTitle)
-                .padding(.bottom, 40)
-            
+        VStack(spacing: 20) {
+            TextField("表示名", text: $displayName)
+                .padding()
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
             TextField("メールアドレス", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
             SecureField("パスワード", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
                 .padding()
-            
-            if let errorMessage = errorMessage {
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            if !errorMessage.isEmpty {
                 Text(errorMessage)
                     .foregroundColor(.red)
             }
-            
+
             Button(action: {
-                AuthManager.shared.signUp(email: email, password: password) { result in
-                    switch result {
-                    case .success:
-                        print("新規登録成功")
-                    case .failure(let error):
-                        errorMessage = "新規登録失敗: \(error.localizedDescription)"
-                    }
-                }
+                signUp()
             }) {
                 Text("新規登録")
-                    .padding()
                     .frame(maxWidth: .infinity)
+                    .padding()
                     .background(Color.green)
                     .foregroundColor(.white)
                     .cornerRadius(10)
             }
-            .padding()
-            
-            Spacer()
+            .padding(.horizontal, 40)
         }
         .padding()
+    }
+
+    // 新規登録処理
+    func signUp() {
+        SignUpManager.shared.signUp(email: email, password: password, displayName: displayName) { result in
+            switch result {
+            case .success:
+                print("新規登録成功")
+                // 新規登録後にメイン画面に遷移
+            case .failure(let error):
+                errorMessage = error.localizedDescription  // エラーメッセージを表示
+            }
+        }
     }
 }

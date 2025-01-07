@@ -1,24 +1,22 @@
-//
-//  ContentView.swift
-//  BlendAR2
-//
-//  Created by KAREN on 2025/01/07.
-//
-
 import SwiftUI
+import FirebaseAuth  // FirebaseAuthをインポート
 
 struct ContentView: View {
-    var body: some View {
-        VStack {
-            Image(systemName: "globe")
-                .imageScale(.large)
-                .foregroundStyle(.tint)
-            Text("Hello, world!")
-        }
-        .padding()
-    }
-}
+    @ObservedObject private var authManager = AuthManager.shared
 
-#Preview {
-    ContentView()
+    var body: some View {
+        Group {
+            if authManager.isLoggedIn {
+                // ログインしている場合はメイン画面を表示
+                MainView()  // メイン画面（ログイン後の画面）
+            } else {
+                // ログインしていない場合はログイン画面を表示
+                LoginView()  // ログイン画面
+            }
+        }
+        .onAppear {
+            // ログイン状態を確認
+            authManager.isLoggedIn = Auth.auth().currentUser != nil
+        }
+    }
 }

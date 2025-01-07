@@ -1,24 +1,25 @@
 import SwiftUI
-import RealityKit
 import ARKit
-import PhotosUI
+import RealityKit
+import CoreLocation
+import FirebaseAuth
+import FirebaseFirestore
 
 struct ARPostView: View {
+    @Binding var selectedImage: UIImage?
     @State private var arView = ARView(frame: .zero)
-    @State private var showImagePicker = false
-    @State private var selectedImage: UIImage?
-    
+
     var body: some View {
         ZStack {
             ARViewContainer(arView: $arView)
                 .edgesIgnoringSafeArea(.all)
-            
+
             VStack {
                 Spacer()
                 Button(action: {
-                    showImagePicker = true
+                    placeImageInAR()
                 }) {
-                    Text("画像を選択する")
+                    Text("画像を配置")
                         .padding()
                         .background(Color.blue)
                         .foregroundColor(.white)
@@ -27,65 +28,52 @@ struct ARPostView: View {
                 .padding(.bottom, 30)
             }
         }
-        .sheet(isPresented: $showImagePicker) {
-            ImagePickerView(image: $selectedImage)
+        .onAppear {
+            setupARSession()
         }
-        .onChange(of: selectedImage) {
-            if let image = selectedImage {
-                addImageToARView(image)
-            }
-        }
-        
     }
-    
-    func addImageToARView(_ image: UIImage) {
-        guard let cgImage = image.cgImage else { return }
-        
-        let texture: TextureResource?
-        if #available(iOS 18.0, *) {
-            texture = try? TextureResource(image: cgImage, options: .init(semantic: .color))
-        } else {
-            texture = try? TextureResource.generate(from: cgImage, options: .init(semantic: .color))
-        }
-        
+
+    func placeImageInAR() {
+        guard let selectedImage = selectedImage, let cgImage = selectedImage.cgImage else { return }
+
+        let texture = try? TextureResource(image: cgImage, withName: "ImageTexture", options: .init(semantic: .color))
+
         let plane = MeshResource.generatePlane(width: 0.5, depth: 0.5)
         var material = SimpleMaterial()
-        
+
         if let texture = texture {
             material.color = .init(tint: .white, texture: MaterialParameters.Texture(texture))
         }
-        
+
         let entity = ModelEntity(mesh: plane, materials: [material])
         entity.position = [0, 0, -1]
-        
+
         let anchor = AnchorEntity(world: [0, 0, -1])
         anchor.addChild(entity)
         arView.scene.addAnchor(anchor)
-        
-        // Firestoreに画像と位置を保存
-        let position = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
-        PostManager.shared.uploadPost(image: image, position: position) { result in
+
+        // Firestoreに画像と位置情報を保存
+        PostManager.shared.uploadImage(selectedImage) { result in
             switch result {
-            case .success:
-                print("投稿が完了しました")
+            case .success(let imageURL):
+                // AR位置情報をCLLocationCoordinate2Dに変換してFirestoreに保存
+                let arPosition = arView.cameraTransform.translation
+                let location = CLLocationCoordinate2D(latitude: CLLocationDegrees(arPosition.x), longitude: CLLocationDegrees(arPosition.y))
+                
+                PostManager.shared.savePost(imageURL: imageURL, location: location) { result in
+                    if case .failure(let error) = result {
+                        print("投稿の保存に失敗: \(error)")
+                    }
+                }
             case .failure(let error):
-                print("投稿に失敗しました: \(error.localizedDescription)")
+                print("画像アップロードに失敗: \(error)")
             }
         }
     }
-    
-    
-    struct ARViewContainer: UIViewRepresentable {
-        @Binding var arView: ARView
-        
-        func makeUIView(context: Context) -> ARView {
-            let config = ARWorldTrackingConfiguration()
-            config.planeDetection = [.horizontal]
-            arView.session.run(config)
-            return arView
-        }
-        
-        func updateUIView(_ uiView: ARView, context: Context) {}
+
+    func setupARSession() {
+        let arConfiguration = ARWorldTrackingConfiguration()
+        arConfiguration.planeDetection = [.horizontal]
+        arView.session.run(arConfiguration)
     }
 }
-
