@@ -7,10 +7,9 @@ class AuthManager: ObservableObject {
     @Published var isLoggedIn: Bool = false
     @Published var currentUser: User?
     
-    private var authStateHandle: AuthStateDidChangeListenerHandle?  // リスナーハンドルを保持
+    private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     private init() {
-        // ログイン状態を監視するリスナーを登録
         authStateHandle = Auth.auth().addStateDidChangeListener { _, user in
             if let user = user {
                 self.currentUser = User(from: user)
@@ -52,10 +51,27 @@ class AuthManager: ObservableObject {
         }
     }
     
-    // リスナーの解除（必要に応じて）
-    func removeAuthListener() {
-        if let handle = authStateHandle {
-            Auth.auth().removeStateDidChangeListener(handle)
+    // ログアウト処理
+    func logout() {
+        do {
+            try Auth.auth().signOut()
+            self.isLoggedIn = false
+            self.currentUser = nil
+            resetToLoginView()
+        } catch {
+            print("ログアウトに失敗しました: \(error.localizedDescription)")
         }
+    }
+    
+    // 初期画面（ログイン画面）に戻る処理
+    private func resetToLoginView() {
+        guard let window = UIApplication.shared.connectedScenes
+            .compactMap({ ($0 as? UIWindowScene)?.windows.first })
+            .first else {
+            return
+        }
+        
+        window.rootViewController = UIHostingController(rootView: LoginView())
+        window.makeKeyAndVisible()
     }
 }
