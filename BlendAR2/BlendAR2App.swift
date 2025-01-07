@@ -1,22 +1,16 @@
 import SwiftUI
-import FirebaseCore
+import Firebase
 
 @main
 struct BlendAR2App: App {
-    @StateObject private var authManager = AuthManager.shared
-
+    // Firebaseの初期化
     init() {
-        // Firebaseの初期設定
-        FirebaseApp.configure()
+        FirebaseApp.configure()  // Firebaseの初期化
     }
 
     var body: some Scene {
         WindowGroup {
-            if authManager.isLoggedIn {
-                MainView()  // ログイン状態ならMainView
-            } else {
-                LoginView()  // 未ログインならLoginView
-            }
+            ContentView()  // ログイン状態に応じて表示する画面
         }
     }
 }

@@ -15,16 +15,20 @@
 	<key>STORAGE_BUCKET</key>
 	<string>blendar2-f7804.firebasestorage.app</string>
 	<key>IS_ADS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_ANALYTICS_ENABLED</key>
-	<false></false>
+	<false/>
 	<key>IS_APPINVITE_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_GCM_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>IS_SIGNIN_ENABLED</key>
-	<true></true>
+	<true/>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:365002496195:ios:10ce37449797dcea292a76</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>このアプリでは現在地を表示するために位置情報を使用します。</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>バックグラウンドでも位置情報を使用します。</string>
 </dict>
 </plist>

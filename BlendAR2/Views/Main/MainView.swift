@@ -2,12 +2,29 @@ import SwiftUI
 import MapKit
 import CoreLocation
 
+// Equatableに準拠したCoordinate型を作成
+struct Coordinate: Equatable {
+    var latitude: Double
+    var longitude: Double
+
+    // CLLocationCoordinate2Dを簡単に変換できるようにする
+    init(coordinate: CLLocationCoordinate2D) {
+        self.latitude = coordinate.latitude
+        self.longitude = coordinate.longitude
+    }
+
+    func toCLLocationCoordinate2D() -> CLLocationCoordinate2D {
+        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
+    }
+}
+
 struct MainView: View {
+    @StateObject private var locationManager = LocationManager()  // LocationManagerを使って位置情報を管理
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194), // 初期位置（例: サンフランシスコ）
+        center: CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.6503), // 初期位置を東京に設定
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
-    @State private var userLocation: CLLocationCoordinate2D? = nil
+    @State private var userLocation: Coordinate? = nil  // Coordinate型を使用
     @State private var showPostButton = false
     @State private var showARView = false
     @State private var selectedImage: UIImage? = nil
@@ -16,7 +33,10 @@ struct MainView: View {
         ZStack {
             Map(coordinateRegion: $region, showsUserLocation: true)
                 .onAppear {
-                    getCurrentLocation()
+                    if let userLocation = locationManager.userLocation {
+                        self.userLocation = Coordinate(coordinate: userLocation)
+                        region.center = userLocation
+                    }
                 }
                 .edgesIgnoringSafeArea(.all)
 
@@ -24,7 +44,7 @@ struct MainView: View {
                 HStack {
                     Spacer()
                     Button(action: {
-                        showPostButton.toggle()
+                        self.showPostButton.toggle()
                     }) {
                         Image(systemName: "person.circle.fill")
                             .resizable()
@@ -36,7 +56,7 @@ struct MainView: View {
                 Spacer()
                 if showPostButton {
                     Button(action: {
-                        showARView.toggle()
+                        self.showARView.toggle()
                     }) {
                         Text("画像投稿")
                             .frame(maxWidth: .infinity)
@@ -53,11 +73,10 @@ struct MainView: View {
                 ARPostView(selectedImage: $selectedImage)
             }
         }
-    }
-
-    func getCurrentLocation() {
-        guard let location = CLLocationManager().location else { return }
-        userLocation = location.coordinate
-        region.center = userLocation ?? CLLocationCoordinate2D(latitude: 37.7749, longitude: -122.4194)  // デフォルト位置
+        .onChange(of: userLocation) { newLocation in
+            if let location = newLocation {
+                region.center = location.toCLLocationCoordinate2D()  // 位置が更新されるたびに地図の中心を更新
+            }
+        }
     }
 }

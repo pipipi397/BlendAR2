@@ -1,30 +1,24 @@
 import Foundation
 import CoreLocation
+import Combine
 
 class LocationManager: NSObject, CLLocationManagerDelegate, ObservableObject {
-    private let locationManager = CLLocationManager()
+    private var locationManager = CLLocationManager()
+    @Published var userLocation: CLLocationCoordinate2D?
 
-    @Published var currentLocation: CLLocationCoordinate2D?
-
-    static let shared = LocationManager()
-
-    override private init() {
+    override init() {
         super.init()
         locationManager.delegate = self
-        
-        // 位置情報の使用許可をリクエスト
         locationManager.requestWhenInUseAuthorization()
-        
-        // 位置情報の更新を開始
         locationManager.startUpdatingLocation()
     }
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         guard let location = locations.first else { return }
-        self.currentLocation = location.coordinate
+        userLocation = location.coordinate
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
-        print("位置情報の取得に失敗: \(error.localizedDescription)")
+        print("位置情報取得に失敗しました: \(error.localizedDescription)")
     }
 }
