@@ -1,34 +1,61 @@
 import SwiftUI
+import FirebaseAuth
 
-struct SigninView: View {
+struct LoginView: View {
     @State private var email = ""
     @State private var password = ""
-    @State private var errorMessage = ""
+    @State private var errorMessage: String?
     
     var body: some View {
         VStack {
-            TextField("Email", text: $email)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            Text("ログイン")
+                .font(.largeTitle)
                 .padding()
             
-            SecureField("Password", text: $password)
-                .textFieldStyle(RoundedBorderTextFieldStyle())
+            TextField("メールアドレス", text: $email)
+                .padding()
+                .autocapitalization(.none)
+            
+            SecureField("パスワード", text: $password)
                 .padding()
             
-            Button("Sign In") {
-                AuthManager.shared.signIn(email: email, password: password) { success, error in
-                    if success {
-                        print("Sign in successful")
-                    } else {
-                        errorMessage = error?.localizedDescription ?? "Unknown error"
-                    }
-                }
+            Button(action: {
+                login()
+            }) {
+                Text("ログイン")
+                    .padding()
+                    .frame(maxWidth: .infinity)
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding()
             }
-            .padding()
             
-            if !errorMessage.isEmpty {
+            if let errorMessage = errorMessage {
                 Text(errorMessage)
                     .foregroundColor(.red)
+                    .padding()
+            }
+        }
+        .padding()
+    }
+    
+    // ログイン処理
+    func login() {
+        AuthManager.shared.login(email: email, password: password) { result in
+            switch result {
+            case .success:
+                print("ログイン成功")
+                
+                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene {
+                    let window = UIWindow(windowScene: windowScene)
+                    window.rootViewController = UIHostingController(rootView: MainView())
+                    window.makeKeyAndVisible()
+                    windowScene.windows.first?.rootViewController = window.rootViewController
+                }
+                
+            case .failure(let error):
+                errorMessage = error.localizedDescription
             }
         }
     }

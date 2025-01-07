@@ -1,14 +1,12 @@
-//
-//  BlendAR2App.swift
-//  BlendAR2
-//
-//  Created by KAREN on 2025/01/07.
-//
-
 import SwiftUI
+import Firebase
 
 @main
-struct BlendAR2App: App {
+struct BlendARApp: App {
+    init() {
+        FirebaseApp.configure()
+    }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()

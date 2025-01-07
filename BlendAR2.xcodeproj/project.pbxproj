@@ -6,6 +6,11 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		853A33A5015ED99CB9718A83 /* Pods_BlendAR2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = DF85A59E9B58352E988738B5 /* Pods_BlendAR2.framework */; };
+		9C1B14072D2D878F004532BA /* SceneKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C1B14062D2D878F004532BA /* SceneKit.framework */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXContainerItemProxy section */
 		9C3F3D772D2D3024000596C2 /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
@@ -24,9 +29,13 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		4A55B52F7CFBE22D3B86FC9D /* Pods-BlendAR2.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlendAR2.release.xcconfig"; path = "Target Support Files/Pods-BlendAR2/Pods-BlendAR2.release.xcconfig"; sourceTree = "<group>"; };
+		9C1B14062D2D878F004532BA /* SceneKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SceneKit.framework; path = System/Library/Frameworks/SceneKit.framework; sourceTree = SDKROOT; };
 		9C3F3D662D2D3022000596C2 /* BlendAR2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlendAR2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9C3F3D762D2D3024000596C2 /* BlendAR2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlendAR2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9C3F3D802D2D3024000596C2 /* BlendAR2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlendAR2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		DF85A59E9B58352E988738B5 /* Pods_BlendAR2.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_BlendAR2.framework; sourceTree = BUILT_PRODUCTS_DIR; };
+		E032C2D3FFF4A2E373079C7C /* Pods-BlendAR2.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-BlendAR2.debug.xcconfig"; path = "Target Support Files/Pods-BlendAR2/Pods-BlendAR2.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -52,6 +61,8 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				9C1B14072D2D878F004532BA /* SceneKit.framework in Frameworks */,
+				853A33A5015ED99CB9718A83 /* Pods_BlendAR2.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -72,6 +83,24 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		0BA4F03CBB504B27E748C161 /* Pods */ = {
+			isa = PBXGroup;
+			children = (
+				E032C2D3FFF4A2E373079C7C /* Pods-BlendAR2.debug.xcconfig */,
+				4A55B52F7CFBE22D3B86FC9D /* Pods-BlendAR2.release.xcconfig */,
+			);
+			path = Pods;
+			sourceTree = "<group>";
+		};
+		3CDD4D19140EF34635838C54 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				9C1B14062D2D878F004532BA /* SceneKit.framework */,
+				DF85A59E9B58352E988738B5 /* Pods_BlendAR2.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		9C3F3D5D2D2D3022000596C2 = {
 			isa = PBXGroup;
 			children = (
@@ -79,6 +108,8 @@
 				9C3F3D792D2D3024000596C2 /* BlendAR2Tests */,
 				9C3F3D832D2D3024000596C2 /* BlendAR2UITests */,
 				9C3F3D672D2D3022000596C2 /* Products */,
+				0BA4F03CBB504B27E748C161 /* Pods */,
+				3CDD4D19140EF34635838C54 /* Frameworks */,
 			);
 			sourceTree = "<group>";
 		};
@@ -99,9 +130,11 @@
 			isa = PBXNativeTarget;
 			buildConfigurationList = 9C3F3D8A2D2D3024000596C2 /* Build configuration list for PBXNativeTarget "BlendAR2" */;
 			buildPhases = (
+				0B957FA9C5D1615E1D24EF52 /* [CP] Check Pods Manifest.lock */,
 				9C3F3D622D2D3022000596C2 /* Sources */,
 				9C3F3D632D2D3022000596C2 /* Frameworks */,
 				9C3F3D642D2D3022000596C2 /* Resources */,
+				4EB65F6225062EEBF241F941 /* [CP] Embed Pods Frameworks */,
 			);
 			buildRules = (
 			);
@@ -111,8 +144,6 @@
 				9C3F3D682D2D3022000596C2 /* BlendAR2 */,
 			);
 			name = BlendAR2;
-			packageProductDependencies = (
-			);
 			productName = BlendAR2;
 			productReference = 9C3F3D662D2D3022000596C2 /* BlendAR2.app */;
 			productType = "com.apple.product-type.application";
@@ -134,8 +165,6 @@
 				9C3F3D792D2D3024000596C2 /* BlendAR2Tests */,
 			);
 			name = BlendAR2Tests;
-			packageProductDependencies = (
-			);
 			productName = BlendAR2Tests;
 			productReference = 9C3F3D762D2D3024000596C2 /* BlendAR2Tests.xctest */;
 			productType = "com.apple.product-type.bundle.unit-test";
@@ -157,8 +186,6 @@
 				9C3F3D832D2D3024000596C2 /* BlendAR2UITests */,
 			);
 			name = BlendAR2UITests;
-			packageProductDependencies = (
-			);
 			productName = BlendAR2UITests;
 			productReference = 9C3F3D802D2D3024000596C2 /* BlendAR2UITests.xctest */;
 			productType = "com.apple.product-type.bundle.ui-testing";
@@ -230,6 +257,48 @@
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 /* End PBXResourcesBuildPhase section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		0B957FA9C5D1615E1D24EF52 /* [CP] Check Pods Manifest.lock */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+				"${PODS_PODFILE_DIR_PATH}/Podfile.lock",
+				"${PODS_ROOT}/Manifest.lock",
+			);
+			name = "[CP] Check Pods Manifest.lock";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+				"$(DERIVED_FILE_DIR)/Pods-BlendAR2-checkManifestLockResult.txt",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "diff \"${PODS_PODFILE_DIR_PATH}/Podfile.lock\" \"${PODS_ROOT}/Manifest.lock\" > /dev/null\nif [ $? != 0 ] ; then\n    # print error to STDERR\n    echo \"error: The sandbox is not in sync with the Podfile.lock. Run 'pod install' or update your CocoaPods installation.\" >&2\n    exit 1\nfi\n# This output is used by Xcode 'outputs' to avoid re-running this script phase.\necho \"SUCCESS\" > \"${SCRIPT_OUTPUT_FILE_0}\"\n";
+			showEnvVarsInLog = 0;
+		};
+		4EB65F6225062EEBF241F941 /* [CP] Embed Pods Frameworks */ = {
+			isa = PBXShellScriptBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-BlendAR2/Pods-BlendAR2-frameworks-${CONFIGURATION}-input-files.xcfilelist",
+			);
+			name = "[CP] Embed Pods Frameworks";
+			outputFileListPaths = (
+				"${PODS_ROOT}/Target Support Files/Pods-BlendAR2/Pods-BlendAR2-frameworks-${CONFIGURATION}-output-files.xcfilelist",
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "\"${PODS_ROOT}/Target Support Files/Pods-BlendAR2/Pods-BlendAR2-frameworks.sh\"\n";
+			showEnvVarsInLog = 0;
+		};
+/* End PBXShellScriptBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		9C3F3D622D2D3022000596C2 /* Sources */ = {
@@ -306,7 +375,7 @@
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_DYNAMIC_NO_PIC = NO;
 				GCC_NO_COMMON_BLOCKS = YES;
@@ -369,7 +438,7 @@
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
-				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = NO;
 				GCC_C_LANGUAGE_STANDARD = gnu17;
 				GCC_NO_COMMON_BLOCKS = YES;
 				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
@@ -390,6 +459,7 @@
 		};
 		9C3F3D8B2D2D3024000596C2 /* Debug */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = E032C2D3FFF4A2E373079C7C /* Pods-BlendAR2.debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -402,6 +472,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -419,6 +490,7 @@
 		};
 		9C3F3D8C2D2D3024000596C2 /* Release */ = {
 			isa = XCBuildConfiguration;
+			baseConfigurationReference = 4A55B52F7CFBE22D3B86FC9D /* Pods-BlendAR2.release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
@@ -431,6 +503,7 @@
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIStatusBarStyle = "";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
 				LD_RUNPATH_SEARCH_PATHS = (
