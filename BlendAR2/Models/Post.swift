@@ -21,10 +21,6 @@ struct Post: Identifiable, Codable {
             self.latitude = latitude
             self.longitude = longitude
         }
-        
-        func toCLLocationCoordinate2D() -> CLLocationCoordinate2D {
-            return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        }
     }
     
     init(from data: [String: Any]) {
@@ -44,17 +40,5 @@ struct Post: Identifiable, Codable {
         } else {
             self.timestamp = Date()
         }
-    }
-    
-    func toDictionary() -> [String: Any] {
-        return [
-            "id": id,
-            "imageURL": imageURL,
-            "position": [
-                "latitude": position.latitude,
-                "longitude": position.longitude
-            ],
-            "timestamp": Timestamp(date: timestamp)
-        ]
     }
 }

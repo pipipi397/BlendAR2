@@ -1,21 +1,23 @@
 import SwiftUI
-import ARKit
 import RealityKit
 
-struct ARViewContainer: UIViewRepresentable {
-    @Binding var arView: ARView
-
-    func makeUIView(context: Context) -> ARView {
-        let arView = ARView(frame: .zero)
-        
-        let config = ARWorldTrackingConfiguration()
-        config.planeDetection = [.horizontal]
-        arView.session.run(config)
-        
-        return arView
+struct ARViewContainer: UIViewControllerRepresentable {
+    func makeUIViewController(context: Context) -> ARViewController {
+        let controller = ARViewController()
+        return controller
     }
 
-    func updateUIView(_ uiView: ARView, context: Context) {
-        // 更新処理
+    func updateUIViewController(_ uiViewController: ARViewController, context: Context) {
+        // 必要に応じて更新処理
+    }
+}
+
+class ARViewController: UIViewController {
+    var arView = ARView(frame: .zero)
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        arView.automaticallyConfigureSession = true
+        view.addSubview(arView)
     }
 }

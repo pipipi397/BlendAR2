@@ -12,7 +12,8 @@ class PostManager {
     
     func uploadImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            completion(.failure(NSError(domain: "ImageError", code: 0, userInfo: nil)))
+            let error = NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "画像データの取得に失敗しました"])
+            completion(.failure(error))
             return
         }
         
@@ -26,22 +27,27 @@ class PostManager {
                 if let url = url {
                     completion(.success(url.absoluteString))
                 } else {
-                    completion(.failure(error!))
+                    let error = NSError(domain: "URLFetchError", code: 0, userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗しました"])
+                    completion(.failure(error))
                 }
             }
         }
     }
     
     func savePost(imageURL: String, location: CLLocationCoordinate2D, completion: @escaping (Result<Void, Error>) -> Void) {
+        let postID = UUID().uuidString
         let post = [
+            "id": postID,
             "imageURL": imageURL,
-            "latitude": location.latitude,
-            "longitude": location.longitude,
+            "position": [
+                "latitude": location.latitude,
+                "longitude": location.longitude
+            ],
             "timestamp": Timestamp(date: Date()),
             "userID": Auth.auth().currentUser?.uid ?? "unknown"
         ] as [String: Any]
         
-        db.collection("posts").addDocument(data: post) { error in
+        db.collection("posts").document(postID).setData(post) { error in
             if let error = error {
                 completion(.failure(error))
             } else {

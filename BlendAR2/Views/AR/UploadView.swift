@@ -1,11 +1,16 @@
 import SwiftUI
 import Firebase
 import FirebaseStorage
+import CoreLocation
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
     @State private var isImagePickerPresented = false
     @State private var isUploading = false
+    @State private var currentLocation: CLLocationCoordinate2D?
+    @State private var showError = false
+    @State private var errorMessage = ""
+    
     @Environment(\.presentationMode) private var presentationMode
 
     var body: some View {
@@ -33,8 +38,27 @@ struct UploadView: View {
             .padding()
 
             Button(action: {
-                if let image = selectedImage {
-                    uploadImageToFirebase(image: image)
+                if let image = selectedImage, let location = currentLocation {
+                    isUploading = true
+                    PostManager.shared.uploadImage(image) { result in
+                        switch result {
+                        case .success(let imageURL):
+                            PostManager.shared.savePost(imageURL: imageURL, location: location) { saveResult in
+                                isUploading = false
+                                switch saveResult {
+                                case .success:
+                                    presentationMode.wrappedValue.dismiss()
+                                case .failure(let error):
+                                    showError(error: error.localizedDescription)
+                                }
+                            }
+                        case .failure(let error):
+                            isUploading = false
+                            showError(error: error.localizedDescription)
+                        }
+                    }
+                } else {
+                    showError(error: "位置情報が取得できませんでした")
                 }
             }) {
                 Text("投稿する")
@@ -49,50 +73,26 @@ struct UploadView: View {
         .sheet(isPresented: $isImagePickerPresented) {
             ImagePickerView(image: $selectedImage)
         }
-    }
-
-    // Firebase Storageへの画像アップロード
-    private func uploadImageToFirebase(image: UIImage) {
-        isUploading = true
-        guard let imageData = image.jpegData(compressionQuality: 0.8) else { return }
-
-        let storageRef = Storage.storage().reference().child("posts/\(UUID().uuidString).jpg")
-
-        storageRef.putData(imageData, metadata: nil) { _, error in
-            isUploading = false
-            if let error = error {
-                print("画像のアップロードに失敗しました: \(error.localizedDescription)")
-                return
-            }
-
-            storageRef.downloadURL { url, error in
-                if let error = error {
-                    print("ダウンロードURLの取得に失敗しました: \(error.localizedDescription)")
-                } else if let downloadURL = url {
-                    savePostData(imageURL: downloadURL.absoluteString)
-                }
-            }
+        .onAppear {
+            fetchCurrentLocation()
+        }
+        .alert(isPresented: $showError) {
+            Alert(title: Text("エラー"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
         }
     }
 
-    // Firestoreに投稿データを保存
-    private func savePostData(imageURL: String) {
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        let post = [
-            "imageURL": imageURL,
-            "latitude": 35.681236,  // 仮の値 (東京駅)
-            "longitude": 139.767125,
-            "userID": userID,
-            "timestamp": Timestamp(date: Date())
-        ] as [String : Any]
-
-        Firestore.firestore().collection("posts").addDocument(data: post) { error in
-            if let error = error {
-                print("投稿データの保存に失敗しました: \(error.localizedDescription)")
-            } else {
-                print("投稿が完了しました")
-                presentationMode.wrappedValue.dismiss()
-            }
+    // 現在地の取得
+    private func fetchCurrentLocation() {
+        let locationManager = CLLocationManager()
+        locationManager.requestWhenInUseAuthorization()
+        if let location = locationManager.location {
+            currentLocation = location.coordinate
         }
+    }
+
+    // エラー表示
+    private func showError(error: String) {
+        errorMessage = error
+        showError = true
     }
 }

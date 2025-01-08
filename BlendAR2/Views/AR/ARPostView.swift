@@ -3,54 +3,89 @@ import RealityKit
 import FirebaseFirestore
 import simd
 
-struct ARPostView: View {
-    @State private var arView = ARView(frame: .zero)
-    @State private var posts: [Post] = []
+class ARPostViewController: UIViewController {
+    var arView = ARView(frame: .zero)
+    var posts: [Post] = []
 
-    var body: some View {
-        ZStack {
-            ARViewContainer(arView: $arView)
-                .frame(width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-        }
-        .onAppear {
-            fetchPosts()
-        }
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        setupARView()
+        fetchPosts()
     }
 
-    // Firestoreから投稿データを取得
+    private func setupARView() {
+        arView.automaticallyConfigureSession = true
+        view.addSubview(arView)
+        
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        arView.addGestureRecognizer(tapGesture)
+        
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        arView.addGestureRecognizer(panGesture)
+        
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch))
+        arView.addGestureRecognizer(pinchGesture)
+    }
+
     private func fetchPosts() {
-        Firestore.firestore().collection("posts").getDocuments { snapshot, error in
-            guard let documents = snapshot?.documents else { return }
-            self.posts = documents.map { Post(from: $0.data()) }
-            placeImagesInAR()
-        }
+        Firestore.firestore().collection("posts")
+            .addSnapshotListener { snapshot, error in
+                guard let documents = snapshot?.documents else { return }
+                self.posts = documents.map { Post(from: $0.data()) }
+                self.placeImagesInAR()
+            }
     }
 
-    // AR空間にオブジェクトを配置
     private func placeImagesInAR() {
         for post in posts {
             let transform = convertToMatrix(latitude: post.position.latitude, longitude: post.position.longitude)
             let anchor = AnchorEntity(world: transform)
             
-            let material = SimpleMaterial(color: .white, isMetallic: false)
-            let plane = ModelEntity(mesh: .generatePlane(width: 0.5, depth: 0.5), materials: [material])
+            guard let url = URL(string: post.imageURL) else { continue }
+            let texture = try? TextureResource.load(contentsOf: url)
+            
+            var material = SimpleMaterial()
+            material.baseColor = MaterialColorParameter.texture(texture!)
+            
+            let plane = ModelEntity(mesh: .generatePlane(width: 1.0, height: 1.0), materials: [material])
             
             arView.scene.addAnchor(anchor)
             anchor.addChild(plane)
         }
     }
-    
-    // 緯度経度をAR空間のfloat4x4座標に変換する関数
+
+    @objc private func handleTap(_ sender: UITapGestureRecognizer) {
+        let tapLocation = sender.location(in: arView)
+        if let entity = arView.entity(at: tapLocation) {
+            entity.removeFromParent()
+        }
+    }
+
+    @objc private func handlePan(_ sender: UIPanGestureRecognizer) {
+        let translation = sender.translation(in: arView)
+        if let entity = arView.entity(at: sender.location(in: arView)) {
+            entity.transform.translation += SIMD3<Float>(
+                Float(translation.x) / 500,
+                0,
+                -Float(translation.y) / 500
+            )
+            sender.setTranslation(.zero, in: arView)
+        }
+    }
+
+    @objc private func handlePinch(_ sender: UIPinchGestureRecognizer) {
+        if let entity = arView.entity(at: sender.location(in: arView)) {
+            let scale = Float(sender.scale)
+            entity.transform.scale *= SIMD3<Float>(scale, scale, scale)
+            sender.scale = 1.0
+        }
+    }
+
     private func convertToMatrix(latitude: Double, longitude: Double) -> float4x4 {
-        // デフォルトの単位行列
         var transform = matrix_identity_float4x4
-        
-        // 緯度経度をAR空間のスケールに変換
-        let scaleFactor: Float = 1000.0  // 座標のスケール調整
+        let scaleFactor: Float = 1000.0
         let x = Float(latitude) / scaleFactor
         let z = Float(longitude) / scaleFactor
-        
-        // 行列に変換 (Y軸はそのまま0で配置)
         transform.columns.3 = SIMD4<Float>(x, 0, z, 1)
         return transform
     }
