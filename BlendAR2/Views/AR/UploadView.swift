@@ -1,16 +1,11 @@
 import SwiftUI
 import Firebase
 import FirebaseStorage
-import CoreLocation
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
     @State private var isImagePickerPresented = false
     @State private var isUploading = false
-    @State private var currentLocation: CLLocationCoordinate2D?
-    @State private var showError = false
-    @State private var errorMessage = ""
-    
     @Environment(\.presentationMode) private var presentationMode
 
     var body: some View {
@@ -38,27 +33,18 @@ struct UploadView: View {
             .padding()
 
             Button(action: {
-                if let image = selectedImage, let location = currentLocation {
+                if let image = selectedImage {
                     isUploading = true
                     PostManager.shared.uploadImage(image) { result in
+                        isUploading = false
                         switch result {
                         case .success(let imageURL):
-                            PostManager.shared.savePost(imageURL: imageURL, location: location) { saveResult in
-                                isUploading = false
-                                switch saveResult {
-                                case .success:
-                                    presentationMode.wrappedValue.dismiss()
-                                case .failure(let error):
-                                    showError(error: error.localizedDescription)
-                                }
-                            }
+                            print("アップロード成功: \(imageURL)")
+                            savePostData(imageURL: imageURL)
                         case .failure(let error):
-                            isUploading = false
-                            showError(error: error.localizedDescription)
+                            print("アップロード失敗: \(error.localizedDescription)")
                         }
                     }
-                } else {
-                    showError(error: "位置情報が取得できませんでした")
                 }
             }) {
                 Text("投稿する")
@@ -73,26 +59,25 @@ struct UploadView: View {
         .sheet(isPresented: $isImagePickerPresented) {
             ImagePickerView(image: $selectedImage)
         }
-        .onAppear {
-            fetchCurrentLocation()
-        }
-        .alert(isPresented: $showError) {
-            Alert(title: Text("エラー"), message: Text(errorMessage), dismissButton: .default(Text("OK")))
-        }
     }
 
-    // 現在地の取得
-    private func fetchCurrentLocation() {
-        let locationManager = CLLocationManager()
-        locationManager.requestWhenInUseAuthorization()
-        if let location = locationManager.location {
-            currentLocation = location.coordinate
-        }
-    }
+    private func savePostData(imageURL: String) {
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+        let post = [
+            "imageURL": imageURL,
+            "latitude": 35.681236,  // 仮の位置情報
+            "longitude": 139.767125,
+            "userID": userID,
+            "timestamp": Timestamp(date: Date())
+        ] as [String: Any]
 
-    // エラー表示
-    private func showError(error: String) {
-        errorMessage = error
-        showError = true
+        Firestore.firestore().collection("posts").addDocument(data: post) { error in
+            if let error = error {
+                print("投稿データの保存に失敗しました: \(error.localizedDescription)")
+            } else {
+                print("投稿が完了しました")
+                presentationMode.wrappedValue.dismiss()
+            }
+        }
     }
 }
