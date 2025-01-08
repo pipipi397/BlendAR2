@@ -1,5 +1,5 @@
 import Firebase
-import FirebaseFirestore
+import FirebaseAuth
 import SwiftUI
 
 class AuthManager: ObservableObject {
@@ -11,7 +11,6 @@ class AuthManager: ObservableObject {
     private var authStateHandle: AuthStateDidChangeListenerHandle?
 
     private init() {
-        // 認証状態のリスナーを追加
         authStateHandle = Auth.auth().addStateDidChangeListener { _, user in
             if let user = user {
                 self.currentUser = User(uid: user.uid, displayName: user.displayName ?? "", email: user.email ?? "")
@@ -23,27 +22,19 @@ class AuthManager: ObservableObject {
         }
     }
 
-    // ログイン処理
+    // ログイン処理を追加
     func login(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        Auth.auth().signIn(withEmail: email, password: password) { result, error in
-            if let error = error {
-                completion(.failure(error))  // エラーがあれば返す
-                return
+        LoginManager.shared.login(email: email, password: password) { result in
+            switch result {
+            case .success:
+                self.isLoggedIn = true
+                self.currentUser = Auth.auth().currentUser.map {
+                    User(uid: $0.uid, displayName: $0.displayName ?? "", email: $0.email ?? "")
+                }
+                completion(.success(()))
+            case .failure(let error):
+                completion(.failure(error))
             }
-            self.isLoggedIn = true
-            self.currentUser = User(uid: result?.user.uid ?? "", displayName: result?.user.displayName ?? "", email: result?.user.email ?? "")
-            completion(.success(()))  // ログイン成功
-        }
-    }
-
-    // ログアウト処理
-    func logout() {
-        do {
-            try Auth.auth().signOut()  // Firebaseからサインアウト
-            self.isLoggedIn = false
-            self.currentUser = nil
-        } catch {
-            print("ログアウトに失敗しました: \(error.localizedDescription)")
         }
     }
 }

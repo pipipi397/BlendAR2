@@ -3,14 +3,19 @@ import Firebase
 
 @main
 struct BlendAR2App: App {
-    // Firebaseの初期化
-    init() {
-        FirebaseApp.configure()  // Firebaseの初期化
-    }
-
+    @UIApplicationDelegateAdaptor(AppDelegate.self) var appDelegate
+    
     var body: some Scene {
         WindowGroup {
-            ContentView()  // ログイン状態に応じて表示する画面
+            ContentView()
         }
+    }
+}
+
+class AppDelegate: NSObject, UIApplicationDelegate {
+    func application(_ application: UIApplication,
+                     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
+        FirebaseApp.configure()
+        return true
     }
 }

@@ -26,9 +26,11 @@
 	<true/>
 	<key>GOOGLE_APP_ID</key>
 	<string>1:365002496195:ios:10ce37449797dcea292a76</string>
-	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>このアプリでは現在地を表示するために位置情報を使用します。</string>
 	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
 	<string>バックグラウンドでも位置情報を使用します。</string>
+	<key>NSLocationWhenInUseUsageDescription</key>
+	<string>現在地を表示するために位置情報を使用します。</string>
+	<key>FirebaseAutomaticScreenReportingEnable</key>
+	<string>FirebaseAutomaticScreenReportingEnable</string>
 </dict>
 </plist>

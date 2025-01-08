@@ -23,6 +23,7 @@ struct LoginView: View {
             }
 
             Button(action: {
+                print("ログインボタンが押されました")
                 login()
             }) {
                 Text("ログイン")
@@ -37,16 +38,14 @@ struct LoginView: View {
         .padding()
     }
 
-    // ログイン処理
-    func login() {
-        authManager.login(email: email, password: password) { result in
+    private func login() {
+        print("ログイン処理開始")
+        AuthManager.shared.login(email: email, password: password) { result in
             switch result {
             case .success:
                 print("ログイン成功")
-                // ログイン成功後にメイン画面に遷移
-                // ここで画面遷移処理を書く
             case .failure(let error):
-                errorMessage = error.localizedDescription  // エラーメッセージを表示
+                errorMessage = error.localizedDescription
             }
         }
     }

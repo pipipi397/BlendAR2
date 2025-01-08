@@ -1,81 +1,74 @@
 import SwiftUI
 import MapKit
-import CoreLocation
-
-// Equatableに準拠したCoordinate型を作成
-struct Coordinate: Equatable {
-    var latitude: Double
-    var longitude: Double
-
-    // CLLocationCoordinate2Dを簡単に変換できるようにする
-    init(coordinate: CLLocationCoordinate2D) {
-        self.latitude = coordinate.latitude
-        self.longitude = coordinate.longitude
-    }
-
-    func toCLLocationCoordinate2D() -> CLLocationCoordinate2D {
-        return CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-    }
-}
 
 struct MainView: View {
-    @StateObject private var locationManager = LocationManager()  // LocationManagerを使って位置情報を管理
+    @StateObject private var locationManager = LocationManager()
     @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 35.6762, longitude: 139.6503), // 初期位置を東京に設定
+        center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
         span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
     )
-    @State private var userLocation: Coordinate? = nil  // Coordinate型を使用
-    @State private var showPostButton = false
-    @State private var showARView = false
-    @State private var selectedImage: UIImage? = nil
-
+    @State private var showMenu = false
+    
     var body: some View {
-        ZStack {
+        ZStack(alignment: .topLeading) {
             Map(coordinateRegion: $region, showsUserLocation: true)
                 .onAppear {
                     if let userLocation = locationManager.userLocation {
-                        self.userLocation = Coordinate(coordinate: userLocation)
-                        region.center = userLocation
+                        updateRegion(for: userLocation)
                     }
                 }
                 .edgesIgnoringSafeArea(.all)
-
-            VStack {
-                HStack {
-                    Spacer()
-                    Button(action: {
-                        self.showPostButton.toggle()
-                    }) {
-                        Image(systemName: "person.circle.fill")
-                            .resizable()
-                            .frame(width: 50, height: 50)
-                            .foregroundColor(.blue)
-                    }
+            
+            Button(action: {
+                showMenu.toggle()
+            }) {
+                Image(systemName: "person.circle.fill")
+                    .resizable()
+                    .frame(width: 50, height: 50)
                     .padding()
-                }
-                Spacer()
-                if showPostButton {
-                    Button(action: {
-                        self.showARView.toggle()
-                    }) {
-                        Text("画像投稿")
-                            .frame(maxWidth: .infinity)
-                            .padding()
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                    .padding()
-                }
             }
-
-            if showARView {
-                ARPostView(selectedImage: $selectedImage)
+            .contextMenu {
+                Button(action: {
+                    showUploadView()
+                }) {
+                    Label("写真を投稿", systemImage: "plus")
+                }
+                
+                Button(action: {
+                    showProfileView()
+                }) {
+                    Label("プロフィールを編集", systemImage: "person.crop.circle")
+                }
+                
+                Button(action: {
+                    logout()
+                }) {
+                    Label("ログアウト", systemImage: "arrow.backward")
+                }
             }
         }
-        .onChange(of: userLocation) { newLocation in
-            if let location = newLocation {
-                region.center = location.toCLLocationCoordinate2D()  // 位置が更新されるたびに地図の中心を更新
+    }
+    
+    private func updateRegion(for location: CLLocationCoordinate2D) {
+        region.center = location
+    }
+    
+    private func showUploadView() {
+        // 写真投稿画面へ遷移するロジック
+    }
+    
+    private func showProfileView() {
+        // プロフィール編集画面へ遷移するロジック
+    }
+    
+    private func logout() {
+        LogoutManager.shared.logout { result in
+            switch result {
+            case .success:
+                print("ログアウト成功")
+                AuthManager.shared.isLoggedIn = false
+            case .failure(let error):
+                print("ログアウト失敗: \(error.localizedDescription)")
             }
         }
     }

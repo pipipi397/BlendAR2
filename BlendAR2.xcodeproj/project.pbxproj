@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		13556B55D1374097A6CE725A /* Pods_BlendAR2.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 2A40F600BA962BD75653A8A1 /* Pods_BlendAR2.framework */; };
 		9C1B14072D2D878F004532BA /* SceneKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9C1B14062D2D878F004532BA /* SceneKit.framework */; };
+		9CDE84D92D2DF7B200072B81 /* AdSupport.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 9CDE84D82D2DF7B200072B81 /* AdSupport.framework */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -36,6 +37,7 @@
 		9C3F3D662D2D3022000596C2 /* BlendAR2.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = BlendAR2.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		9C3F3D762D2D3024000596C2 /* BlendAR2Tests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlendAR2Tests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		9C3F3D802D2D3024000596C2 /* BlendAR2UITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = BlendAR2UITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		9CDE84D82D2DF7B200072B81 /* AdSupport.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = AdSupport.framework; path = System/Library/Frameworks/AdSupport.framework; sourceTree = SDKROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -63,6 +65,7 @@
 			files = (
 				9C1B14072D2D878F004532BA /* SceneKit.framework in Frameworks */,
 				13556B55D1374097A6CE725A /* Pods_BlendAR2.framework in Frameworks */,
+				9CDE84D92D2DF7B200072B81 /* AdSupport.framework in Frameworks */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -95,6 +98,7 @@
 		3CDD4D19140EF34635838C54 /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
+				9CDE84D82D2DF7B200072B81 /* AdSupport.framework */,
 				9C1B14062D2D878F004532BA /* SceneKit.framework */,
 				2A40F600BA962BD75653A8A1 /* Pods_BlendAR2.framework */,
 			);
@@ -469,6 +473,8 @@
 				DEVELOPMENT_TEAM = 63LPM4QQYL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "常に位置情報を利用します。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "アプリ使用中に位置情報を利用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
@@ -500,6 +506,8 @@
 				DEVELOPMENT_TEAM = 63LPM4QQYL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "常に位置情報を利用します。";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "アプリ使用中に位置情報を利用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
 				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
