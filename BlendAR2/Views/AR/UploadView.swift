@@ -1,12 +1,10 @@
 import SwiftUI
-import Firebase
-import FirebaseStorage
+import PhotosUI
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
     @State private var isImagePickerPresented = false
-    @State private var isUploading = false
-    @Environment(\.presentationMode) private var presentationMode
+    @State private var isARViewPresented = false
 
     var body: some View {
         VStack {
@@ -31,53 +29,25 @@ struct UploadView: View {
                     .cornerRadius(10)
             }
             .padding()
-
-            Button(action: {
-                if let image = selectedImage {
-                    isUploading = true
-                    PostManager.shared.uploadImage(image) { result in
-                        isUploading = false
-                        switch result {
-                        case .success(let imageURL):
-                            print("アップロード成功: \(imageURL)")
-                            savePostData(imageURL: imageURL)
-                        case .failure(let error):
-                            print("アップロード失敗: \(error.localizedDescription)")
-                        }
-                    }
+            
+            // 選択後に「決定」ボタンを表示
+            if selectedImage != nil {
+                Button(action: {
+                    isARViewPresented = true
+                }) {
+                    Text("決定")
+                        .padding()
+                        .background(Color.green)
+                        .foregroundColor(.white)
+                        .cornerRadius(10)
                 }
-            }) {
-                Text("投稿する")
-                    .padding()
-                    .background(isUploading ? Color.gray : Color.green)
-                    .foregroundColor(.white)
-                    .cornerRadius(10)
             }
-            .padding()
-            .disabled(selectedImage == nil || isUploading)
         }
         .sheet(isPresented: $isImagePickerPresented) {
             ImagePickerView(image: $selectedImage)
         }
-    }
-
-    private func savePostData(imageURL: String) {
-        guard let userID = Auth.auth().currentUser?.uid else { return }
-        let post = [
-            "imageURL": imageURL,
-            "latitude": 35.681236,  // 仮の位置情報
-            "longitude": 139.767125,
-            "userID": userID,
-            "timestamp": Timestamp(date: Date())
-        ] as [String: Any]
-
-        Firestore.firestore().collection("posts").addDocument(data: post) { error in
-            if let error = error {
-                print("投稿データの保存に失敗しました: \(error.localizedDescription)")
-            } else {
-                print("投稿が完了しました")
-                presentationMode.wrappedValue.dismiss()
-            }
+        .sheet(isPresented: $isARViewPresented) {
+            ARPostViewContainer(selectedImage: selectedImage)
         }
     }
 }

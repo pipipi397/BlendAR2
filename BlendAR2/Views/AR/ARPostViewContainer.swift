@@ -1,6 +1,6 @@
 import SwiftUI
 import RealityKit
-import FirebaseFirestore
+import ARKit
 import simd
 import CoreLocation
 
@@ -13,70 +13,163 @@ struct ARPostViewContainer: UIViewControllerRepresentable {
         return controller
     }
     
-    func updateUIViewController(_ uiViewController: ARPostViewContainerController, context: Context) {
-        // 必要に応じて更新処理
-    }
+    func updateUIViewController(_ uiViewController: ARPostViewContainerController, context: Context) {}
 }
 
 class ARPostViewContainerController: UIViewController {
-    var arView = ARView(frame: .zero)
+    var arView: ARView!
     var selectedImage: UIImage?
-    var anchor = AnchorEntity()
+    var anchorEntity: AnchorEntity?  // アンカーを保持
+    var placedEntity: ModelEntity?  // 配置されたオブジェクト
+    var wallNormal: SIMD3<Float> = [0, 1, 0]  // 初期はy軸回転
 
     override func viewDidLoad() {
         super.viewDidLoad()
         setupARView()
-        if let image = selectedImage {
-            placeObjectInAR(image: image)
-        }
-        setupPostButton()
+        startARSession()
+        addGestureRecognizers()
     }
 
+    // ARViewのセットアップ
     private func setupARView() {
-        arView.automaticallyConfigureSession = true
+        arView = ARView(frame: .zero)
+        arView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(arView)
+        
+        NSLayoutConstraint.activate([
+            arView.topAnchor.constraint(equalTo: view.topAnchor),
+            arView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            arView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            arView.trailingAnchor.constraint(equalTo: view.trailingAnchor)
+        ])
     }
 
-    private func placeObjectInAR(image: UIImage) {
-        let boxMesh = MeshResource.generateBox(size: [0.5, 0.01, 0.5])
+    // ARセッションの開始 (水平と垂直面の検出を有効化)
+    private func startARSession() {
+        let configuration = ARWorldTrackingConfiguration()
+        configuration.planeDetection = [.horizontal, .vertical]  // 垂直面も検出
+        arView.session.run(configuration)
+    }
+
+    // ジェスチャー追加 (タップ, ピンチ, パン, 回転)
+    private func addGestureRecognizers() {
+        let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
+        arView.addGestureRecognizer(tapGesture)
+        
+        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch))
+        arView.addGestureRecognizer(pinchGesture)
+        
+        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
+        panGesture.minimumNumberOfTouches = 1
+        arView.addGestureRecognizer(panGesture)
+
+        let twoFingerPanGesture = UIPanGestureRecognizer(target: self, action: #selector(handleTwoFingerPan))
+        twoFingerPanGesture.minimumNumberOfTouches = 2  // 2本指で回転
+        arView.addGestureRecognizer(twoFingerPanGesture)
+    }
+
+    // タップで画像を配置または再配置
+    @objc private func handleTap(_ sender: UITapGestureRecognizer) {
+        let tapLocation = sender.location(in: arView)
+        let results = arView.raycast(from: tapLocation, allowing: .existingPlaneGeometry, alignment: .any)
+        
+        guard let firstResult = results.first else {
+            print("平面が見つかりませんでした")
+            return
+        }
+
+        let transform = Transform(matrix: firstResult.worldTransform)
+        
+        // 壁の法線ベクトルを取得
+        wallNormal = normalize(SIMD3<Float>(firstResult.worldTransform.columns.2.x,
+                                            firstResult.worldTransform.columns.2.y,
+                                            firstResult.worldTransform.columns.2.z))
+
+        if let entity = placedEntity {
+            moveObject(entity: entity, to: transform)
+        } else {
+            placeObjectInAR(image: selectedImage, transform: transform)
+        }
+    }
+
+    // オブジェクトを移動
+    private func moveObject(entity: ModelEntity, to transform: Transform) {
+        if let existingAnchor = anchorEntity {
+            arView.scene.removeAnchor(existingAnchor)
+        }
+
+        let newAnchor = AnchorEntity(world: transform.matrix)
+        newAnchor.addChild(entity)
+        arView.scene.addAnchor(newAnchor)
+        anchorEntity = newAnchor
+
+        print("オブジェクトが再配置されました")
+    }
+
+    // AR空間にオブジェクトを配置
+    private func placeObjectInAR(image: UIImage?, transform: Transform) {
+        guard let image = image, let cgImage = image.cgImage else {
+            print("画像をCGImageに変換できませんでした")
+            return
+        }
+
+        let boxMesh = MeshResource.generateBox(size: [0.3, 0.01, 0.3])
         let plane = ModelEntity(mesh: boxMesh)
         
-        if let texture = try? TextureResource.generate(from: image.cgImage!, options: .init(semantic: .color)) {
-            var material = SimpleMaterial()
-            material.baseColor = MaterialColorParameter.texture(texture)
-            plane.model?.materials = [material]
+        guard let texture = try? TextureResource.init(image: cgImage, withName: "customTexture", options: .init(semantic: .color)) else {
+            print("テクスチャ生成に失敗しました")
+            return
         }
+
+        var material = SimpleMaterial()
+        material.color = SimpleMaterial.BaseColor(texture: MaterialParameters.Texture(texture))
+        plane.model?.materials = [material]
+
+        let anchor = AnchorEntity(world: transform.matrix)
         anchor.addChild(plane)
         arView.scene.addAnchor(anchor)
+
+        placedEntity = plane
+        anchorEntity = anchor
+        print("オブジェクトが配置されました")
     }
 
-    private func setupPostButton() {
-        let button = UIButton(frame: CGRect(x: 20, y: view.bounds.height - 100, width: view.bounds.width - 40, height: 50))
-        button.setTitle("投稿する", for: .normal)
-        button.backgroundColor = .green
-        button.addTarget(self, action: #selector(postObject), for: .touchUpInside)
-        view.addSubview(button)
+    // ピンチでスケール変更
+    @objc private func handlePinch(_ sender: UIPinchGestureRecognizer) {
+        guard let entity = placedEntity else { return }
+        let scale = Float(sender.scale)
+        entity.scale *= SIMD3<Float>(scale, scale, scale)
+        sender.scale = 1.0
     }
 
-    @objc private func postObject() {
-        guard let image = selectedImage else { return }
+    // 1本指のパンでオブジェクトを移動
+    @objc private func handlePan(_ sender: UIPanGestureRecognizer) {
+        guard let entity = placedEntity else { return }
         
-        PostManager.shared.uploadImage(image) { result in
-            switch result {
-            case .success(let imageURL):
-                let position = CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125) // 仮の位置情報
-                PostManager.shared.savePost(imageURL: imageURL, location: position) { saveResult in
-                    switch saveResult {
-                    case .success:
-                        print("投稿が完了しました")
-                        self.dismiss(animated: true)
-                    case .failure(let error):
-                        print("投稿に失敗しました: \(error.localizedDescription)")
-                    }
-                }
-            case .failure(let error):
-                print("画像のアップロードに失敗しました: \(error.localizedDescription)")
-            }
-        }
+        let translation = sender.translation(in: arView)
+        
+        let results = arView.raycast(from: sender.location(in: arView), allowing: .existingPlaneInfinite, alignment: .any)
+        
+        guard let firstResult = results.first else { return }
+        
+        let newTransform = Transform(matrix: firstResult.worldTransform)
+        
+        entity.transform.translation = newTransform.translation
+        
+        sender.setTranslation(.zero, in: arView)  // リセット
+    }
+
+
+    // 2本指で壁に沿って回転 (y軸回転のみ)
+    @objc private func handleTwoFingerPan(_ sender: UIPanGestureRecognizer) {
+        guard let entity = placedEntity else { return }
+        let translation = sender.translation(in: arView)
+
+        let rotationY = -Float(translation.x) * 0.02  // 左右移動でy軸回転のみ
+
+        let yAxisRotation = simd_quatf(angle: rotationY, axis: wallNormal)  // 壁の法線方向に回転
+        
+        entity.transform.rotation *= yAxisRotation
+        sender.setTranslation(.zero, in: arView)
     }
 }

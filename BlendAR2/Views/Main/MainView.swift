@@ -1,29 +1,22 @@
 import SwiftUI
+import MapKit
 
 struct MainView: View {
-    @State private var showActionSheet = false
-    @State private var navigateToUpload = false
-    
+    @State private var isUploadViewPresented = false
+    @State private var isProfileViewPresented = false
+    @State private var isLoggedOut = false
+
     var body: some View {
         NavigationView {
             ZStack {
-                MapView()
-                    .edgesIgnoringSafeArea(.all)
+                MapView() // マップ表示
                 
                 VStack {
                     Spacer()
-                    Text("現在地が表示されます")
-                        .padding()
-                        .background(Color.white.opacity(0.7))
-                        .cornerRadius(10)
-                        .padding(.bottom, 50)
-                }
-                
-                // 左上のアイコン
-                VStack {
+                    
                     HStack {
                         Button(action: {
-                            showActionSheet = true
+                            showActionSheet()
                         }) {
                             Image(systemName: "person.circle.fill")
                                 .resizable()
@@ -32,39 +25,39 @@ struct MainView: View {
                         }
                         Spacer()
                     }
-                    Spacer()
                 }
-                
-                // 投稿画面へのナビゲーションリンク
-                NavigationLink(
-                    destination: UploadView(),
-                    isActive: $navigateToUpload,
-                    label: { EmptyView() }
-                )
             }
-        }
-        .actionSheet(isPresented: $showActionSheet) {
-            ActionSheet(
-                title: Text("メニューを選択"),
-                buttons: [
-                    .default(Text("画像の投稿"), action: {
-                        navigateToUpload = true
-                    }),
-                    .default(Text("プロフィール編集"), action: {
-                        openProfileView()
-                    }),
-                    .cancel(Text("キャンセル"))
-                ]
-            )
+            .navigationBarHidden(true)
+            .sheet(isPresented: $isUploadViewPresented) {
+                UploadView()
+            }
+            .sheet(isPresented: $isProfileViewPresented) {
+                ProfileView()
+            }
         }
     }
     
-    // プロフィール編集画面の呼び出し
-    private func openProfileView() {
+    // メニューのアクションシート
+    private func showActionSheet() {
+        let actionSheet = UIAlertController(title: "メニュー", message: nil, preferredStyle: .actionSheet)
+
+        actionSheet.addAction(UIAlertAction(title: "投稿", style: .default, handler: { _ in
+            isUploadViewPresented = true
+        }))
+
+        actionSheet.addAction(UIAlertAction(title: "プロフィール編集", style: .default, handler: { _ in
+            isProfileViewPresented = true
+        }))
+
+        actionSheet.addAction(UIAlertAction(title: "ログアウト", style: .destructive, handler: { _ in
+            isLoggedOut = true
+        }))
+
+        actionSheet.addAction(UIAlertAction(title: "キャンセル", style: .cancel))
+        
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-           let window = windowScene.windows.first {
-            let profileView = UIHostingController(rootView: ProfileView())
-            window.rootViewController?.present(profileView, animated: true, completion: nil)
+           let rootViewController = windowScene.windows.first?.rootViewController {
+            rootViewController.present(actionSheet, animated: true)
         }
     }
 }

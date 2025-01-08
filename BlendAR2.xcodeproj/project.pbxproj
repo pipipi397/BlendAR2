@@ -473,6 +473,7 @@
 				DEVELOPMENT_TEAM = 63LPM4QQYL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "カメラの使用を許可します";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "常に位置情報を利用します。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "アプリ使用中に位置情報を利用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
@@ -506,6 +507,7 @@
 				DEVELOPMENT_TEAM = 63LPM4QQYL;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSCameraUsageDescription = "カメラの使用を許可します";
 				INFOPLIST_KEY_NSLocationAlwaysAndWhenInUseUsageDescription = "常に位置情報を利用します。";
 				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "アプリ使用中に位置情報を利用します。";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
