@@ -1,58 +1,66 @@
+import SwiftUI
 import FirebaseStorage
 import FirebaseFirestore
-import FirebaseAuth
-import UIKit
-import CoreLocation
+import FirebaseAuth  // Firebase Authentication をインポート
 
-class PostManager {
+class PostManager: ObservableObject {
     static let shared = PostManager()
-    private let db = Firestore.firestore()
-    
-    private init() {}
-    
-    func uploadImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
+
+    func uploadPost(image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            let error = NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "画像データの取得に失敗しました"])
-            completion(.failure(error))
+            completion(.failure(UploadError.invalidImage))
             return
         }
-        
-        let ref = Storage.storage().reference().child("posts/\(UUID().uuidString).jpg")
-        ref.putData(imageData, metadata: nil) { _, error in
+
+        let storageRef = Storage.storage().reference()
+        let imageRef = storageRef.child("posts/\(UUID().uuidString).jpg")
+
+        imageRef.putData(imageData, metadata: nil) { metadata, error in
             if let error = error {
                 completion(.failure(error))
                 return
             }
-            ref.downloadURL { url, error in
-                if let url = url {
-                    completion(.success(url.absoluteString))
-                } else {
-                    let error = NSError(domain: "URLFetchError", code: 0, userInfo: [NSLocalizedDescriptionKey: "ダウンロードURLの取得に失敗しました"])
+            
+            imageRef.downloadURL { url, error in
+                if let error = error {
                     completion(.failure(error))
+                    return
                 }
+
+                guard let downloadURL = url else {
+                    completion(.failure(UploadError.failedToGetURL))
+                    return
+                }
+                
+                self.savePostToFirestore(imageURL: downloadURL.absoluteString, completion: completion)
             }
         }
     }
-    
-    func savePost(imageURL: String, location: CLLocationCoordinate2D, completion: @escaping (Result<Void, Error>) -> Void) {
-        let postID = UUID().uuidString
-        let post = [
-            "id": postID,
+
+    private func savePostToFirestore(imageURL: String, completion: @escaping (Result<String, Error>) -> Void) {
+        guard let userID = Auth.auth().currentUser?.uid else {
+            completion(.failure(UploadError.noUserID))
+            return
+        }
+
+        let post: [String: Any] = [
             "imageURL": imageURL,
-            "position": [
-                "latitude": location.latitude,
-                "longitude": location.longitude
-            ],
-            "timestamp": Timestamp(date: Date()),
-            "userID": Auth.auth().currentUser?.uid ?? "unknown"
-        ] as [String: Any]
+            "userID": userID,
+            "timestamp": Timestamp()
+        ]
         
-        db.collection("posts").document(postID).setData(post) { error in
+        Firestore.firestore().collection("posts").addDocument(data: post) { error in
             if let error = error {
                 completion(.failure(error))
             } else {
-                completion(.success(()))
+                completion(.success("投稿完了"))
             }
         }
+    }
+
+    enum UploadError: Error {
+        case invalidImage
+        case failedToGetURL
+        case noUserID
     }
 }

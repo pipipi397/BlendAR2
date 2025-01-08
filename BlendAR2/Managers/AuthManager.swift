@@ -1,40 +1,48 @@
-import Firebase
 import FirebaseAuth
-import SwiftUI
 
-class AuthManager: ObservableObject {
+class AuthManager {
     static let shared = AuthManager()
 
-    @Published var isLoggedIn: Bool = false
-    @Published var currentUser: User?
+    // ログイン状態を判定
+    var isLoggedIn: Bool {
+        return Auth.auth().currentUser != nil
+    }
 
-    private var authStateHandle: AuthStateDidChangeListenerHandle?
+    // FirebaseAuth.UserからBlendAR2.Userに変換する
+    var currentUser: User? {
+        guard let firebaseUser = Auth.auth().currentUser else { return nil }
+        return User(uid: firebaseUser.uid, displayName: firebaseUser.displayName, email: firebaseUser.email, profileImageURL: firebaseUser.photoURL?.absoluteString ?? "")
+    }
 
-    private init() {
-        authStateHandle = Auth.auth().addStateDidChangeListener { _, user in
-            if let user = user {
-                self.currentUser = User(uid: user.uid, displayName: user.displayName ?? "", email: user.email ?? "")
-                self.isLoggedIn = true
+    // ログイン処理
+    func login(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        Auth.auth().signIn(withEmail: email, password: password) { result, error in
+            if let error = error {
+                completion(.failure(error))
             } else {
-                self.isLoggedIn = false
-                self.currentUser = nil
+                completion(.success(()))
             }
         }
     }
 
-    // ログイン処理を追加
-    func login(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        LoginManager.shared.login(email: email, password: password) { result in
-            switch result {
-            case .success:
-                self.isLoggedIn = true
-                self.currentUser = Auth.auth().currentUser.map {
-                    User(uid: $0.uid, displayName: $0.displayName ?? "", email: $0.email ?? "")
-                }
-                completion(.success(()))
-            case .failure(let error):
+    // 新規登録処理
+    func signUp(email: String, password: String, completion: @escaping (Result<Void, Error>) -> Void) {
+        Auth.auth().createUser(withEmail: email, password: password) { result, error in
+            if let error = error {
                 completion(.failure(error))
+            } else {
+                completion(.success(()))
             }
+        }
+    }
+    
+    // ログアウト処理
+    func logout(completion: @escaping (Result<Void, Error>) -> Void) {
+        do {
+            try Auth.auth().signOut()
+            completion(.success(()))
+        } catch let error {
+            completion(.failure(error))
         }
     }
 }
