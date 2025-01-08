@@ -1,102 +1,48 @@
 import SwiftUI
-import FirebaseAuth
 
 struct ProfileView: View {
-    @ObservedObject private var authManager = AuthManager.shared
-    @State private var displayName: String = ""
-    @State private var isEditing: Bool = false
-    @State private var profileImage: UIImage?
-    @State private var showImagePicker = false
-    @State private var errorMessage: String?
-
+    @Environment(\.presentationMode) var presentationMode
+    
+    @State private var username = "ユーザー名"
+    @State private var bio = "自己紹介を入力"
+    
     var body: some View {
         VStack {
-            if let user = authManager.currentUser {
-                AsyncImage(url: URL(string: user.profileImageURL)) { image in
-                    image.resizable()
-                } placeholder: {
-                    Image(systemName: "person.circle.fill")
-                        .resizable()
-                }
-                .frame(width: 150, height: 150)
-                .clipShape(Circle())
-                .onTapGesture {
-                    showImagePicker = true
-                }
-                .padding()
-
-                Text(user.email)
-                    .font(.subheadline)
-                    .foregroundColor(.gray)
-                
-                if isEditing {
-                    TextField("表示名", text: $displayName)
-                        .textFieldStyle(RoundedBorderTextFieldStyle())
-                        .padding()
-                } else {
-                    Text(user.displayName)
-                        .font(.title)
-                        .padding()
+            Text("プロフィール編集")
+                .font(.largeTitle)
+                .padding(.top)
+            
+            Form {
+                Section(header: Text("名前")) {
+                    TextField("ユーザー名", text: $username)
                 }
                 
-                Button(action: {
-                    if isEditing {
-                        updateProfile()
-                    }
-                    isEditing.toggle()
-                }) {
-                    Text(isEditing ? "保存" : "プロフィールを編集")
-                        .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.blue)
-                        .foregroundColor(.white)
-                        .cornerRadius(10)
+                Section(header: Text("自己紹介")) {
+                    TextField("自己紹介", text: $bio)
                 }
-                .padding()
-            } else {
-                Text("ユーザーデータがありません")
             }
-        }
-        .onAppear {
-            if let user = authManager.currentUser {
-                displayName = user.displayName
+            .padding(.top)
+            
+            Button(action: {
+                saveProfile()
+            }) {
+                Text("保存する")
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .background(Color.blue)
+                    .foregroundColor(.white)
+                    .cornerRadius(10)
+                    .padding()
             }
-        }
-        .sheet(isPresented: $showImagePicker) {
-            ImagePickerView(image: $profileImage)  // 画像選択ビュー
+            
+            Spacer()
         }
     }
     
-    // プロフィール更新処理
-    func updateProfile() {
-        guard let uid = authManager.currentUser?.uid else { return }
-
-        // プロフィール画像が選択されている場合、画像をアップロードしてURLを取得
-        if let profileImage = profileImage {
-            ProfileManager.shared.uploadProfileImage(profileImage) { result in
-                switch result {
-                case .success(let imageURL):
-                    updateUser(displayName: displayName, profileImageURL: imageURL)
-                case .failure(let error):
-                    errorMessage = "画像のアップロードに失敗: \(error.localizedDescription)"
-                }
-            }
-        } else {
-            updateUser(displayName: displayName, profileImageURL: nil)
-        }
-    }
-
-    // Firestoreにプロフィール情報を更新
-    func updateUser(displayName: String, profileImageURL: String?) {
-        guard let uid = authManager.currentUser?.uid else { return }
-
-        ProfileManager.shared.updateUserProfile(uid: uid, displayName: displayName, profileImageURL: profileImageURL) { result in
-            switch result {
-            case .success:
-                print("プロフィールが更新されました")
-            case .failure(let error):
-                errorMessage = "更新に失敗: \(error.localizedDescription)"
-            }
-        }
+    // プロフィール保存処理
+    private func saveProfile() {
+        // 保存処理（Firebase連携などを実装）
+        print("プロフィールが保存されました")
+        presentationMode.wrappedValue.dismiss()
     }
 }

@@ -1,75 +1,70 @@
 import SwiftUI
-import MapKit
 
 struct MainView: View {
-    @StateObject private var locationManager = LocationManager()
-    @State private var region = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 35.681236, longitude: 139.767125),
-        span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-    )
-    @State private var showMenu = false
+    @State private var showActionSheet = false
+    @State private var navigateToUpload = false
     
     var body: some View {
-        ZStack(alignment: .topLeading) {
-            Map(coordinateRegion: $region, showsUserLocation: true)
-                .onAppear {
-                    if let userLocation = locationManager.userLocation {
-                        updateRegion(for: userLocation)
+        NavigationView {
+            ZStack {
+                MapView()
+                    .edgesIgnoringSafeArea(.all)
+                
+                VStack {
+                    Spacer()
+                    Text("現在地が表示されます")
+                        .padding()
+                        .background(Color.white.opacity(0.7))
+                        .cornerRadius(10)
+                        .padding(.bottom, 50)
+                }
+                
+                // 左上のアイコン
+                VStack {
+                    HStack {
+                        Button(action: {
+                            showActionSheet = true
+                        }) {
+                            Image(systemName: "person.circle.fill")
+                                .resizable()
+                                .frame(width: 50, height: 50)
+                                .padding()
+                        }
+                        Spacer()
                     }
-                }
-                .edgesIgnoringSafeArea(.all)
-            
-            Button(action: {
-                showMenu.toggle()
-            }) {
-                Image(systemName: "person.circle.fill")
-                    .resizable()
-                    .frame(width: 50, height: 50)
-                    .padding()
-            }
-            .contextMenu {
-                Button(action: {
-                    showUploadView()
-                }) {
-                    Label("写真を投稿", systemImage: "plus")
+                    Spacer()
                 }
                 
-                Button(action: {
-                    showProfileView()
-                }) {
-                    Label("プロフィールを編集", systemImage: "person.crop.circle")
-                }
-                
-                Button(action: {
-                    logout()
-                }) {
-                    Label("ログアウト", systemImage: "arrow.backward")
-                }
+                // 投稿画面へのナビゲーションリンク
+                NavigationLink(
+                    destination: UploadView(),
+                    isActive: $navigateToUpload,
+                    label: { EmptyView() }
+                )
             }
+        }
+        .actionSheet(isPresented: $showActionSheet) {
+            ActionSheet(
+                title: Text("メニューを選択"),
+                buttons: [
+                    .default(Text("画像の投稿"), action: {
+                        navigateToUpload = true
+                    }),
+                    .default(Text("プロフィール編集"), action: {
+                        openProfileView()
+                    }),
+                    .cancel(Text("キャンセル"))
+                ]
+            )
         }
     }
     
-    private func updateRegion(for location: CLLocationCoordinate2D) {
-        region.center = location
-    }
-    
-    private func showUploadView() {
-        // 写真投稿画面へ遷移するロジック
-    }
-    
-    private func showProfileView() {
-        // プロフィール編集画面へ遷移するロジック
-    }
-    
-    private func logout() {
-        LogoutManager.shared.logout { result in
-            switch result {
-            case .success:
-                print("ログアウト成功")
-                AuthManager.shared.isLoggedIn = false
-            case .failure(let error):
-                print("ログアウト失敗: \(error.localizedDescription)")
-            }
+    // プロフィール編集画面の呼び出し
+    private func openProfileView() {
+        if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+           let window = windowScene.windows.first {
+            let profileView = UIHostingController(rootView: ProfileView())
+            window.rootViewController?.present(profileView, animated: true, completion: nil)
         }
     }
 }
