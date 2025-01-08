@@ -55,17 +55,6 @@ class ARPostViewContainerController: UIViewController {
     private func addGestureRecognizers() {
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap))
         arView.addGestureRecognizer(tapGesture)
-        
-        let pinchGesture = UIPinchGestureRecognizer(target: self, action: #selector(handlePinch))
-        arView.addGestureRecognizer(pinchGesture)
-        
-        let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan))
-        panGesture.minimumNumberOfTouches = 1
-        arView.addGestureRecognizer(panGesture)
-
-        let twoFingerPanGesture = UIPanGestureRecognizer(target: self, action: #selector(handleTwoFingerPan))
-        twoFingerPanGesture.minimumNumberOfTouches = 2  // 2本指で回転
-        arView.addGestureRecognizer(twoFingerPanGesture)
     }
 
     // タップで画像を配置または再配置
@@ -102,8 +91,6 @@ class ARPostViewContainerController: UIViewController {
         newAnchor.addChild(entity)
         arView.scene.addAnchor(newAnchor)
         anchorEntity = newAnchor
-
-        print("オブジェクトが再配置されました")
     }
 
     // AR空間にオブジェクトを配置
@@ -125,13 +112,16 @@ class ARPostViewContainerController: UIViewController {
         material.color = SimpleMaterial.BaseColor(texture: MaterialParameters.Texture(texture))
         plane.model?.materials = [material]
 
-        let anchor = AnchorEntity(world: transform.matrix)
+        // 壁にぴったりと配置
+        var adjustedTransform = transform  // ここをvarに変更
+        adjustedTransform.translation += wallNormal * 0.015  // 少し押し付けて配置
+
+        let anchor = AnchorEntity(world: adjustedTransform.matrix)
         anchor.addChild(plane)
         arView.scene.addAnchor(anchor)
 
         placedEntity = plane
         anchorEntity = anchor
-        print("オブジェクトが配置されました")
     }
 
     // ピンチでスケール変更
@@ -158,7 +148,6 @@ class ARPostViewContainerController: UIViewController {
         
         sender.setTranslation(.zero, in: arView)  // リセット
     }
-
 
     // 2本指で壁に沿って回転 (y軸回転のみ)
     @objc private func handleTwoFingerPan(_ sender: UIPanGestureRecognizer) {
