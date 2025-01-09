@@ -1,19 +1,12 @@
 import SwiftUI
 import RealityKit
-import ARKit
-import UIKit
 
-/// SwiftUI で `ARPostViewContainerController` を利用するためのラッパー
-struct ARPostViewContainer: UIViewControllerRepresentable {
-    var selectedImage: UIImage?
+struct ARViewContainer: UIViewRepresentable {
+    static let sharedARView = ARView(frame: .zero)
 
-    func makeUIViewController(context: Context) -> ARPostViewContainerController {
-        let controller = ARPostViewContainerController()
-        controller.selectedImage = selectedImage
-        return controller
+    func makeUIView(context: Context) -> ARView {
+        return ARViewContainer.sharedARView
     }
 
-    func updateUIViewController(_ uiViewController: ARPostViewContainerController, context: Context) {
-        // 必要に応じて UI を更新
-    }
+    func updateUIView(_ uiView: ARView, context: Context) {}
 }

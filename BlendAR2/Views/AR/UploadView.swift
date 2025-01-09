@@ -1,8 +1,4 @@
 import SwiftUI
-import RealityKit
-import ARKit
-import Combine
-
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
@@ -32,12 +28,12 @@ struct UploadView: View {
                     .cornerRadius(10)
             }
             .padding()
-            
+
             if selectedImage != nil {
                 Button(action: {
                     isARViewPresented = true
                 }) {
-                    Text("決定")
+                    Text("AR表示")
                         .padding()
                         .background(Color.green)
                         .foregroundColor(.white)
@@ -49,7 +45,7 @@ struct UploadView: View {
             ImagePickerView(image: $selectedImage)
         }
         .sheet(isPresented: $isARViewPresented) {
-            ARPostViewContainer(selectedImage: selectedImage)
+            ARPostViewContainer()
         }
     }
 }

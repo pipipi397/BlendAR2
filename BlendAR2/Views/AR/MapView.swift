@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import FirebaseFirestore
 
 struct MapView: UIViewRepresentable {
     @ObservedObject var viewModel: MapViewModel
@@ -13,8 +14,6 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {
-        print("更新前のピン数: \(uiView.annotations.count)")
-
         uiView.removeAnnotations(uiView.annotations)
         uiView.addAnnotations(viewModel.annotations)
 
@@ -33,23 +32,29 @@ struct MapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let annotation = view.annotation as? MKPointAnnotation,
-               let imageURL = annotation.title,
-               let arAnchorPosition = annotation.subtitle { // 必要なら subtitle に他のデータを格納
-                print("ピンがタップされました: \(imageURL)")
-
-                // ARPostDisplayController に投稿データを渡す
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let rootViewController = windowScene.windows.first?.rootViewController {
-                    let arPostViewController = ARPostDisplayController()
-                    arPostViewController.postData = [
-                        "imageURL": imageURL,
-                        "arAnchorPosition": arAnchorPosition // 必要に応じて適切にデータを変換
-                    ]
-                    rootViewController.present(arPostViewController, animated: true, completion: nil)
-                }
+            if let annotation = view.annotation as? MKPointAnnotation {
+                print("ピンがタップされました: \(annotation.title ?? "タイトルなし")")
+                presentARDisplay(annotation: annotation)
             }
         }
 
+        private func presentARDisplay(annotation: MKPointAnnotation) {
+            guard let latitude = annotation.coordinate.latitude as CLLocationDegrees?,
+                  let longitude = annotation.coordinate.longitude as CLLocationDegrees? else { return }
+
+            let postData: [String: Any] = [
+                "latitude": latitude,
+                "longitude": longitude,
+                "altitude": 0.0 // 必要ならFirestoreから高度データを取得
+            ]
+
+            let arController = ARPostDisplayController()
+            arController.postData = postData
+
+            if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
+               let rootViewController = windowScene.windows.first?.rootViewController {
+                rootViewController.present(arController, animated: true)
+            }
+        }
     }
 }

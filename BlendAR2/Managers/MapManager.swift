@@ -1,23 +1,28 @@
 import Foundation
-import MapKit
-import SwiftUI
+import RealityKit
+import ARKit
 
 class MapManager {
     static let shared = MapManager()
 
-    private init() {}
+    func recreateAnchor(from postData: [String: Any], arView: ARView) {
+        guard let latitude = postData["latitude"] as? CLLocationDegrees,
+              let longitude = postData["longitude"] as? CLLocationDegrees,
+              let altitude = postData["altitude"] as? CLLocationDistance else {
+            print("位置データが不正です")
+            return
+        }
 
-    // 地図のカスタム設定
-    func createMapRegion(center: CLLocationCoordinate2D) -> MKCoordinateRegion {
-        return MKCoordinateRegion(
-            center: center,
-            span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-        )
-    }
+        let geoAnchor = ARGeoAnchor(coordinate: CLLocationCoordinate2D(latitude: latitude, longitude: longitude), altitude: altitude)
+        arView.session.add(anchor: geoAnchor)
 
-    // 現在地のみを表示するための地図設定
-    func createMapView(region: Binding<MKCoordinateRegion>) -> some View {
-        return Map(coordinateRegion: region, showsUserLocation: true) // 現在地のみを表示
-            .edgesIgnoringSafeArea(.all)
+        let anchorEntity = AnchorEntity(anchor: geoAnchor)
+
+        let plane = ModelEntity(mesh: .generatePlane(width: 0.3, depth: 0.3))
+        plane.model?.materials = [SimpleMaterial(color: .green, isMetallic: false)]
+        anchorEntity.addChild(plane)
+
+        arView.scene.addAnchor(anchorEntity)
+        print("GeoAnchorを再現しました")
     }
 }
