@@ -1,5 +1,8 @@
 import SwiftUI
-import PhotosUI
+import RealityKit
+import ARKit
+import Combine
+
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
@@ -30,7 +33,6 @@ struct UploadView: View {
             }
             .padding()
             
-            // 選択後に「決定」ボタンを表示
             if selectedImage != nil {
                 Button(action: {
                     isARViewPresented = true

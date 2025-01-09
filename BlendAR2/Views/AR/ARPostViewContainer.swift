@@ -1,27 +1,18 @@
 import SwiftUI
+import UIKit
 import RealityKit
 import ARKit
 import simd
 import CoreLocation
-
-struct ARPostViewContainer: UIViewControllerRepresentable {
-    var selectedImage: UIImage?
-
-    func makeUIViewController(context: Context) -> ARPostViewContainerController {
-        let controller = ARPostViewContainerController()
-        controller.selectedImage = selectedImage
-        return controller
-    }
-    
-    func updateUIViewController(_ uiViewController: ARPostViewContainerController, context: Context) {}
-}
+import Combine
 
 class ARPostViewContainerController: UIViewController {
     var arView: ARView!
     var selectedImage: UIImage?
     var anchorEntity: AnchorEntity?
     var placedEntity: ModelEntity?
-    var wallNormal: SIMD3<Float> = [0, 1, 0]
+    private var locationManager = LocationManager()
+    private var cancellables = Set<AnyCancellable>()
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -29,13 +20,14 @@ class ARPostViewContainerController: UIViewController {
         startARSession()
         addGestureRecognizers()
         setupPostButton()
+        observeLocationUpdates()
     }
 
     private func setupARView() {
         arView = ARView(frame: .zero)
         arView.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(arView)
-        
+
         NSLayoutConstraint.activate([
             arView.topAnchor.constraint(equalTo: view.topAnchor),
             arView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
@@ -92,13 +84,13 @@ class ARPostViewContainerController: UIViewController {
         let plane = ModelEntity(mesh: .generatePlane(width: 0.3, depth: 0.3))
         let material = SimpleMaterial(color: .white, isMetallic: false)
 
-        guard let texture = try? TextureResource.generate(from: cgImage, options: .init(semantic: .color)) else {
+        guard let texture = try? TextureResource(image: cgImage, options: .init(semantic: .color)) else {
             print("テクスチャ生成に失敗しました")
             return
         }
 
         var materialWithTexture = material
-        materialWithTexture.baseColor = MaterialColorParameter.texture(texture)
+        materialWithTexture.color = .init(texture: MaterialParameters.Texture(texture))
         plane.model?.materials = [materialWithTexture]
 
         let anchor = AnchorEntity(world: transform.matrix)
@@ -119,7 +111,7 @@ class ARPostViewContainerController: UIViewController {
 
         postButton.translatesAutoresizingMaskIntoConstraints = false
         view.addSubview(postButton)
-        
+
         NSLayoutConstraint.activate([
             postButton.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -20),
             postButton.centerXAnchor.constraint(equalTo: view.centerXAnchor),
@@ -129,16 +121,24 @@ class ARPostViewContainerController: UIViewController {
     }
 
     @objc private func handlePostButton() {
-        guard let image = selectedImage else {
-            print("画像が選択されていません")
+        guard let image = selectedImage,
+              let anchorEntity = anchorEntity else {
+            print("画像またはアンカーがありません")
             return
         }
 
-        PostManager.shared.uploadPost(image: image) { [weak self] result in
+        let arAnchorPosition = anchorEntity.transform.matrix
+
+        guard let userLocation = locationManager.userLocation else {
+            print("現在地が取得できません")
+            return
+        }
+
+        PostManager.shared.uploadPost(image: image, arAnchorPosition: arAnchorPosition, userLocation: userLocation) { [weak self] result in
             switch result {
             case .success:
                 print("投稿が完了しました")
-                self?.navigateToMainView()  // 投稿成功後にMainViewへ遷移
+                self?.navigateToMainView()
             case .failure(let error):
                 print("投稿エラー: \(error.localizedDescription)")
                 self?.showAlert(title: "エラー", message: error.localizedDescription)
@@ -158,5 +158,16 @@ class ARPostViewContainerController: UIViewController {
         let alert = UIAlertController(title: title, message: message, preferredStyle: .alert)
         alert.addAction(UIAlertAction(title: "OK", style: .default, handler: nil))
         present(alert, animated: true, completion: nil)
+    }
+
+    private func observeLocationUpdates() {
+        locationManager.$userLocation
+            .receive(on: DispatchQueue.main)
+            .sink { [weak self] location in
+                if location == nil {
+                    print("現在地が取得できません")
+                }
+            }
+            .store(in: &cancellables)
     }
 }

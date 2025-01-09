@@ -1,23 +1,19 @@
 import SwiftUI
 import RealityKit
+import ARKit
+import UIKit
 
-struct ARViewContainer: UIViewControllerRepresentable {
-    func makeUIViewController(context: Context) -> ARViewController {
-        let controller = ARViewController()
+/// SwiftUI で `ARPostViewContainerController` を利用するためのラッパー
+struct ARPostViewContainer: UIViewControllerRepresentable {
+    var selectedImage: UIImage?
+
+    func makeUIViewController(context: Context) -> ARPostViewContainerController {
+        let controller = ARPostViewContainerController()
+        controller.selectedImage = selectedImage
         return controller
     }
 
-    func updateUIViewController(_ uiViewController: ARViewController, context: Context) {
-        // 必要に応じて更新処理
-    }
-}
-
-class ARViewController: UIViewController {
-    var arView = ARView(frame: .zero)
-
-    override func viewDidLoad() {
-        super.viewDidLoad()
-        arView.automaticallyConfigureSession = true
-        view.addSubview(arView)
+    func updateUIViewController(_ uiViewController: ARPostViewContainerController, context: Context) {
+        // 必要に応じて UI を更新
     }
 }

@@ -1,10 +1,11 @@
 import Foundation
 import CoreLocation
-import FirebaseFirestore
+import Combine
 
 class LocationManager: NSObject, CLLocationManagerDelegate, ObservableObject {
     private var locationManager = CLLocationManager()
     @Published var userLocation: CLLocationCoordinate2D?
+    @Published var locationError: String?
 
     override init() {
         super.init()
@@ -20,20 +21,16 @@ class LocationManager: NSObject, CLLocationManagerDelegate, ObservableObject {
             self.userLocation = location.coordinate
         }
     }
-    
-    // 現在地に近い投稿を取得
-    func filterNearbyPosts(completion: @escaping ([Post]) -> Void) {
-        let radius: Double = 500  // 500m以内
-        let currentLocation = userLocation ?? CLLocationCoordinate2D(latitude: 0, longitude: 0)
-        
-        Firestore.firestore().collection("posts").getDocuments { snapshot, error in
-            guard let documents = snapshot?.documents else { return }
-            let posts = documents.map { Post(from: $0.data()) }.filter { post in
-                let postLocation = CLLocation(latitude: post.position.latitude, longitude: post.position.longitude)
-                let userLocation = CLLocation(latitude: currentLocation.latitude, longitude: currentLocation.longitude)
-                return userLocation.distance(from: postLocation) < radius
-            }
-            completion(posts)
+
+    func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {
+        DispatchQueue.main.async {
+            self.locationError = "位置情報の取得に失敗しました: \(error.localizedDescription)"
+        }
+    }
+
+    func requestLocationPermission() {
+        if CLLocationManager.authorizationStatus() == .notDetermined {
+            locationManager.requestWhenInUseAuthorization()
         }
     }
 }
