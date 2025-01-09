@@ -34,14 +34,19 @@ struct MapView: UIViewRepresentable {
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
             if let annotation = view.annotation as? MKPointAnnotation,
-               let imageURL = annotation.title {
+               let imageURL = annotation.title,
+               let arAnchorPosition = annotation.subtitle { // 必要なら subtitle に他のデータを格納
                 print("ピンがタップされました: \(imageURL)")
-                // AR 表示に遷移
+
+                // ARPostDisplayController に投稿データを渡す
                 if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
                    let rootViewController = windowScene.windows.first?.rootViewController {
-                    let arPostView = ARPostDisplayController()
-                    arPostView.imageURL = imageURL
-                    rootViewController.present(arPostView, animated: true, completion: nil)
+                    let arPostViewController = ARPostDisplayController()
+                    arPostViewController.postData = [
+                        "imageURL": imageURL,
+                        "arAnchorPosition": arAnchorPosition // 必要に応じて適切にデータを変換
+                    ]
+                    rootViewController.present(arPostViewController, animated: true, completion: nil)
                 }
             }
         }
