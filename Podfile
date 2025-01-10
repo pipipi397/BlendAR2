@@ -10,6 +10,7 @@ target 'BlendAR2' do
   pod 'GoogleUtilities'
   pod 'GTMSessionFetcher'
   pod 'Firebase/Storage'
+  pod 'SDWebImageSwiftUI'
 
   # Pods全体にデプロイメントターゲットを強制
   post_install do |installer|

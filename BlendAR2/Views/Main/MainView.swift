@@ -1,5 +1,6 @@
 import SwiftUI
 import MapKit
+import FirebaseAuth
 
 struct MainView: View {
     @State private var isUploadViewPresented = false
@@ -10,10 +11,11 @@ struct MainView: View {
 
     var body: some View {
         ZStack {
-            if let currentLocation = locationManager.userLocation {
+            if let currentLocation = locationManager.userLocation,
+               let userID = Auth.auth().currentUser?.uid { // ログイン中のユーザーIDを取得
                 MapView(viewModel: viewModel)
                     .onAppear {
-                        viewModel.fetchPosts(currentLocation: currentLocation)
+                        viewModel.fetchPosts(currentLocation: currentLocation, userID: userID) // ユーザーの投稿を取得
                     }
                     .edgesIgnoringSafeArea(.all)
             } else {
@@ -21,7 +23,6 @@ struct MainView: View {
                     .font(.title)
                     .foregroundColor(.gray)
             }
-
             VStack {
                 Spacer()
 

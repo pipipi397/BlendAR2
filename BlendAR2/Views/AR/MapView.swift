@@ -13,8 +13,9 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {
-        uiView.removeAnnotations(uiView.annotations) // 既存のピンを削除
-        uiView.addAnnotations(viewModel.annotations) // 新しいピンを追加
+        uiView.removeAnnotations(uiView.annotations)
+        uiView.addAnnotations(viewModel.annotations)
+        print("更新されたピン数: \(viewModel.annotations.count)")
     }
 
     func makeCoordinator() -> Coordinator {
@@ -29,30 +30,25 @@ struct MapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            guard let annotation = view.annotation as? MKPointAnnotation,
-                  let comment = annotation.title,
-                  let imageURL = annotation.subtitle else {
-                print("ピン情報が不十分です")
+            guard let annotation = view.annotation as? MKPointAnnotation else {
+                print("選択されたピンが無効です")
                 return
             }
 
-            // コメントを表示するアラートを作成
-            let alert = UIAlertController(title: "投稿詳細", message: comment, preferredStyle: .alert)
+            print("選択されたピン情報:")
+            print("タイトル: \(annotation.title ?? "なし")")
+            print("URL: \(annotation.subtitle ?? "なし")")
 
-            // アラートに「閉じる」ボタンを追加
-            alert.addAction(UIAlertAction(title: "閉じる", style: .default, handler: nil))
-
-            // アラートに「ARで表示」ボタンを追加
-            alert.addAction(UIAlertAction(title: "ARで表示", style: .default) { _ in
-                if let rootViewController = UIApplication.shared.windows.first?.rootViewController {
-                    let arPostViewController = ARPostDisplayController()
-                    arPostViewController.postData = ["imageURL": imageURL]
-                    rootViewController.present(arPostViewController, animated: true, completion: nil)
-                }
-            })
+            guard let comment = annotation.title,
+                  let imageURL = annotation.subtitle else {
+                print("ピン情報が不足しています")
+                return
+            }
 
             if let rootViewController = UIApplication.shared.windows.first?.rootViewController {
-                rootViewController.present(alert, animated: true, completion: nil)
+                let arPostController = ARPostDisplayController()
+                arPostController.postData = ["comment": comment, "imageURL": imageURL]
+                rootViewController.present(arPostController, animated: true)
             }
         }
     }
