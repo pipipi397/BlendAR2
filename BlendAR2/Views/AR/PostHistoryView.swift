@@ -1,36 +1,46 @@
 import SwiftUI
-import Firebase
+import FirebaseFirestore
+import FirebaseStorage
+import FirebaseAuth
 
 struct PostHistoryView: View {
     @State private var posts: [Post] = []
-    
+
     var body: some View {
-        VStack {
-            Text("投稿履歴")
-                .font(.largeTitle)
-                .padding()
-            
+        NavigationView {
             List {
                 ForEach(posts) { post in
                     VStack(alignment: .leading) {
-                        Text(post.imageURL)
+                        Text(post.comment)
+                            .font(.headline)
+                        Text("位置: \(post.position.latitude), \(post.position.longitude)")
+                            .font(.subheadline)
                         Text("投稿日時: \(post.timestamp)")
+                            .font(.subheadline)
                     }
                 }
                 .onDelete(perform: deletePost)
             }
-            .onAppear {
-                fetchUserPosts()
-            }
+            .navigationBarTitle("投稿履歴", displayMode: .inline)
+        }
+        .onAppear {
+            fetchUserPosts()
         }
     }
-    
+
     private func fetchUserPosts() {
-        let userID = Auth.auth().currentUser?.uid ?? ""
+        guard let userID = Auth.auth().currentUser?.uid else { return }
+
         Firestore.firestore().collection("posts")
             .whereField("userID", isEqualTo: userID)
             .getDocuments { snapshot, error in
+                if let error = error {
+                    print("Firestoreエラー: \(error.localizedDescription)")
+                    return
+                }
+
                 guard let documents = snapshot?.documents else { return }
+
                 self.posts = documents.map { doc in
                     var post = Post(from: doc.data())
                     post.id = doc.documentID
@@ -38,7 +48,7 @@ struct PostHistoryView: View {
                 }
             }
     }
-    
+
     private func deletePost(at offsets: IndexSet) {
         offsets.forEach { index in
             let post = posts[index]
@@ -52,7 +62,7 @@ struct PostHistoryView: View {
                             print("Storage画像削除エラー: \(error.localizedDescription)")
                         } else {
                             print("投稿と画像の削除に成功")
-                            posts.remove(atOffsets: offsets)
+                            self.posts.remove(at: index)
                         }
                     }
                 }

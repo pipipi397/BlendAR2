@@ -3,7 +3,7 @@ import MapKit
 
 struct MainView: View {
     @State private var isUploadViewPresented = false
-    @State private var isProfileViewPresented = false
+    @State private var isPostHistoryViewPresented = false // 投稿履歴表示用
     @State private var showActionSheet = false
     @StateObject private var viewModel = MapViewModel()
     @StateObject private var locationManager = LocationManager()
@@ -46,8 +46,8 @@ struct MainView: View {
                     .default(Text("投稿"), action: {
                         isUploadViewPresented = true
                     }),
-                    .default(Text("プロフィール編集"), action: {
-                        isProfileViewPresented = true
+                    .default(Text("ホーム"), action: { // ホームに変更
+                        isPostHistoryViewPresented = true
                     }),
                     .destructive(Text("ログアウト"), action: {
                         logout()
@@ -59,8 +59,8 @@ struct MainView: View {
         .sheet(isPresented: $isUploadViewPresented) {
             UploadView()
         }
-        .sheet(isPresented: $isProfileViewPresented) {
-            ProfileView()
+        .sheet(isPresented: $isPostHistoryViewPresented) {
+            PostHistoryView() // 投稿履歴を表示
         }
     }
 
@@ -69,7 +69,7 @@ struct MainView: View {
             switch result {
             case .success:
                 print("ログアウト成功")
-                switchRootViewToContentView()  // ルートビューを切り替え
+                switchRootViewToContentView() // ルートビューを切り替え
             case .failure(let error):
                 print("ログアウトエラー: \(error.localizedDescription)")
             }
