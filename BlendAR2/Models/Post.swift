@@ -2,43 +2,33 @@ import Foundation
 import CoreLocation
 import FirebaseFirestore
 
-struct Post: Identifiable, Codable {
-    var id: String = UUID().uuidString
+struct Post: Identifiable {
+    var id: String
     var imageURL: String
-    var position: Coordinate
+    var position: CLLocationCoordinate2D
     var timestamp: Date
-    
-    struct Coordinate: Codable {
-        var latitude: Double
-        var longitude: Double
-        
-        init(from location: CLLocationCoordinate2D) {
-            self.latitude = location.latitude
-            self.longitude = location.longitude
-        }
-        
-        init(latitude: Double, longitude: Double) {
-            self.latitude = latitude
-            self.longitude = longitude
-        }
-    }
-    
+    var comment: String
+    var userID: String
+
     init(from data: [String: Any]) {
         self.id = data["id"] as? String ?? UUID().uuidString
         self.imageURL = data["imageURL"] as? String ?? ""
         
-        if let positionData = data["position"] as? [String: Any],
-           let latitude = positionData["latitude"] as? Double,
-           let longitude = positionData["longitude"] as? Double {
-            self.position = Coordinate(latitude: latitude, longitude: longitude)
+        if let positionData = data["position"] as? [String: Double],
+           let latitude = positionData["latitude"],
+           let longitude = positionData["longitude"] {
+            self.position = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
         } else {
-            self.position = Coordinate(latitude: 0.0, longitude: 0.0)
+            self.position = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
         }
-        
+
         if let timestamp = data["timestamp"] as? Timestamp {
             self.timestamp = timestamp.dateValue()
         } else {
             self.timestamp = Date()
         }
+
+        self.comment = data["comment"] as? String ?? ""
+        self.userID = data["userID"] as? String ?? ""
     }
 }

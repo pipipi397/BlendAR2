@@ -6,15 +6,21 @@ struct MainView: View {
     @State private var isProfileViewPresented = false
     @State private var showActionSheet = false
     @StateObject private var viewModel = MapViewModel()
+    @StateObject private var locationManager = LocationManager()
 
     var body: some View {
         ZStack {
-            // マップ表示
-            MapView(viewModel: viewModel)
-                .onAppear {
-                    viewModel.fetchPosts()
-                }
-                .edgesIgnoringSafeArea(.all)
+            if let currentLocation = locationManager.userLocation {
+                MapView(viewModel: viewModel)
+                    .onAppear {
+                        viewModel.fetchPosts(currentLocation: currentLocation)
+                    }
+                    .edgesIgnoringSafeArea(.all)
+            } else {
+                Text("位置情報を取得中...")
+                    .font(.title)
+                    .foregroundColor(.gray)
+            }
 
             VStack {
                 Spacer()
@@ -58,7 +64,6 @@ struct MainView: View {
         }
     }
 
-    // ログアウト処理
     private func logout() {
         LogoutManager.shared.logout { result in
             switch result {
@@ -71,7 +76,6 @@ struct MainView: View {
         }
     }
 
-    // ルートビューをContentViewに変更
     private func switchRootViewToContentView() {
         if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
            let window = windowScene.windows.first {

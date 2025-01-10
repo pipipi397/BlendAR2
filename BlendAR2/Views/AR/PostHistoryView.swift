@@ -3,7 +3,7 @@ import Firebase
 
 struct PostHistoryView: View {
     @State private var posts: [Post] = []
-
+    
     var body: some View {
         VStack {
             Text("投稿履歴")
@@ -31,7 +31,11 @@ struct PostHistoryView: View {
             .whereField("userID", isEqualTo: userID)
             .getDocuments { snapshot, error in
                 guard let documents = snapshot?.documents else { return }
-                self.posts = documents.map { Post(from: $0.data()) }
+                self.posts = documents.map { doc in
+                    var post = Post(from: doc.data())
+                    post.id = doc.documentID
+                    return post
+                }
             }
     }
     
@@ -40,9 +44,17 @@ struct PostHistoryView: View {
             let post = posts[index]
             Firestore.firestore().collection("posts").document(post.id).delete { error in
                 if let error = error {
-                    print("削除に失敗しました: \(error.localizedDescription)")
+                    print("Firestore投稿削除エラー: \(error.localizedDescription)")
                 } else {
-                    posts.remove(atOffsets: offsets)
+                    let storageRef = Storage.storage().reference(forURL: post.imageURL)
+                    storageRef.delete { error in
+                        if let error = error {
+                            print("Storage画像削除エラー: \(error.localizedDescription)")
+                        } else {
+                            print("投稿と画像の削除に成功")
+                            posts.remove(atOffsets: offsets)
+                        }
+                    }
                 }
             }
         }

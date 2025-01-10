@@ -13,12 +13,8 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {
-        print("更新前のピン数: \(uiView.annotations.count)")
-
-        uiView.removeAnnotations(uiView.annotations)
-        uiView.addAnnotations(viewModel.annotations)
-
-        print("マップに追加されたピン数: \(viewModel.annotations.count)")
+        uiView.removeAnnotations(uiView.annotations) // 既存のピンを削除
+        uiView.addAnnotations(viewModel.annotations) // 新しいピンを追加
     }
 
     func makeCoordinator() -> Coordinator {
@@ -33,23 +29,31 @@ struct MapView: UIViewRepresentable {
         }
 
         func mapView(_ mapView: MKMapView, didSelect view: MKAnnotationView) {
-            if let annotation = view.annotation as? MKPointAnnotation,
-               let imageURL = annotation.title,
-               let arAnchorPosition = annotation.subtitle { // 必要なら subtitle に他のデータを格納
-                print("ピンがタップされました: \(imageURL)")
+            guard let annotation = view.annotation as? MKPointAnnotation,
+                  let comment = annotation.title,
+                  let imageURL = annotation.subtitle else {
+                print("ピン情報が不十分です")
+                return
+            }
 
-                // ARPostDisplayController に投稿データを渡す
-                if let windowScene = UIApplication.shared.connectedScenes.first as? UIWindowScene,
-                   let rootViewController = windowScene.windows.first?.rootViewController {
+            // コメントを表示するアラートを作成
+            let alert = UIAlertController(title: "投稿詳細", message: comment, preferredStyle: .alert)
+
+            // アラートに「閉じる」ボタンを追加
+            alert.addAction(UIAlertAction(title: "閉じる", style: .default, handler: nil))
+
+            // アラートに「ARで表示」ボタンを追加
+            alert.addAction(UIAlertAction(title: "ARで表示", style: .default) { _ in
+                if let rootViewController = UIApplication.shared.windows.first?.rootViewController {
                     let arPostViewController = ARPostDisplayController()
-                    arPostViewController.postData = [
-                        "imageURL": imageURL,
-                        "arAnchorPosition": arAnchorPosition // 必要に応じて適切にデータを変換
-                    ]
+                    arPostViewController.postData = ["imageURL": imageURL]
                     rootViewController.present(arPostViewController, animated: true, completion: nil)
                 }
+            })
+
+            if let rootViewController = UIApplication.shared.windows.first?.rootViewController {
+                rootViewController.present(alert, animated: true, completion: nil)
             }
         }
-
     }
 }

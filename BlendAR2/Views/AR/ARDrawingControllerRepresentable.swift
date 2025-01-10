@@ -22,6 +22,12 @@ struct ARDrawingControllerRepresentable: UIViewControllerRepresentable {
             setupDrawing()
         }
 
+        private func setupARSession() {
+            let configuration = ARWorldTrackingConfiguration()
+            configuration.planeDetection = [.horizontal]
+            arView.session.run(configuration)
+        }
+
         private func setupDrawing() {
             let panGesture = UIPanGestureRecognizer(target: self, action: #selector(handlePan(_:)))
             arView.addGestureRecognizer(panGesture)
@@ -33,7 +39,7 @@ struct ARDrawingControllerRepresentable: UIViewControllerRepresentable {
             case .began, .changed:
                 if let hitTestResult = arView.hitTest(location).first {
                     let sphere = ModelEntity(mesh: .generateSphere(radius: 0.01))
-                    sphere.transform.translation = hitTestResult.worldTransform.translation
+                    sphere.position = hitTestResult.position // 修正箇所
                     let anchor = AnchorEntity()
                     anchor.addChild(sphere)
                     arView.scene.addAnchor(anchor)
