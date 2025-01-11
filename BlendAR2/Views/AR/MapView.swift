@@ -16,6 +16,8 @@ struct MapView: UIViewRepresentable {
     func updateUIView(_ uiView: MKMapView, context: Context) {
         uiView.removeAnnotations(uiView.annotations)
         uiView.addAnnotations(viewModel.annotations)
+        print("マップに追加されたピン数: \(viewModel.annotations.count)")
+
     }
 
     func makeCoordinator() -> Coordinator {
