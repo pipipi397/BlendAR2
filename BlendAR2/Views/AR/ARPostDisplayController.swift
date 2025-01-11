@@ -1,36 +1,26 @@
 import UIKit
 import RealityKit
-import ARKit
 
 class ARPostDisplayController: UIViewController {
-    var arView: ARView!
-    var postData: [String: Any]?
+    var postData: [String: String]?
 
     override func viewDidLoad() {
         super.viewDidLoad()
-        arView = ARView(frame: view.bounds)
-        view.addSubview(arView)
-
-        setupARSession()
-
-        if let postData = postData,
-           let imageURL = postData["imageURL"] as? String {
-            placeObject(with: imageURL)
-        }
+        setupARView()
     }
 
-    private func setupARSession() {
-        let configuration = ARWorldTrackingConfiguration()
-        configuration.planeDetection = [.horizontal]
-        arView.session.run(configuration, options: [.resetTracking, .removeExistingAnchors])
-    }
+    private func setupARView() {
+        guard let arView = self.view as? ARView else { return }
+        guard let comment = postData?["comment"], let imageURL = postData?["imageURL"] else { return }
 
-    private func placeObject(with imageURL: String) {
+        print("ARデータ: コメント - \(comment), 画像URL - \(imageURL)")
+
+        // 投稿画像をダウンロードしてAR空間に表示
         downloadImage(from: URL(string: imageURL)!) { [weak self] image in
             guard let self = self, let image = image, let cgImage = image.cgImage else { return }
 
             let aspectRatio = Float(image.size.width / image.size.height)
-            let plane = ModelEntity(mesh: .generatePlane(width: 0.3, height: 0.3 / aspectRatio))
+            let plane = ModelEntity(mesh: .generatePlane(width: 0.5, height: 0.5 / aspectRatio))
 
             if let texture = try? TextureResource(image: cgImage, options: .init(semantic: .color)) {
                 var material = SimpleMaterial()
@@ -38,31 +28,20 @@ class ARPostDisplayController: UIViewController {
                 plane.model?.materials = [material]
             }
 
-            let anchor = AnchorEntity(world: SIMD3<Float>(0, 0, -0.5))
+            let anchor = AnchorEntity(world: [0, 0, -1]) // ユーザー前方1mに配置
             anchor.addChild(plane)
-            self.arView.scene.addAnchor(anchor)
+            arView.scene.addAnchor(anchor)
         }
     }
 
     private func downloadImage(from url: URL, completion: @escaping (UIImage?) -> Void) {
-        DispatchQueue.global(qos: .userInitiated).async {
-            do {
-                let data = try Data(contentsOf: url)
-                let image = UIImage(data: data)
-                DispatchQueue.main.async {
-                    completion(image)
-                }
-            } catch {
-                DispatchQueue.main.async {
-                    print("画像ダウンロードエラー: \(error.localizedDescription)")
-                    completion(nil)
-                }
+        let task = URLSession.shared.dataTask(with: url) { data, _, _ in
+            if let data = data {
+                completion(UIImage(data: data))
+            } else {
+                completion(nil)
             }
         }
-    }
-
-    override func viewWillDisappear(_ animated: Bool) {
-        super.viewWillDisappear(animated)
-        arView.session.pause()
+        task.resume()
     }
 }

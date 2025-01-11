@@ -46,14 +46,26 @@ struct HomeView: View {
                             Text(user.displayName)
                                 .font(.headline)
                             Spacer()
-                            Button(action: {
-                                toggleFollow(user: user)
-                            }) {
-                                Text(isFollowing(user: user) ? "フォロー中" : "フォロー")
-                                    .padding(8)
-                                    .background(isFollowing(user: user) ? Color.blue : Color.green)
-                                    .foregroundColor(.white)
-                                    .cornerRadius(8)
+                            if followingUsers.contains(where: { $0.uid == user.uid }) {
+                                Button(action: {
+                                    unfollowUser(user: user)
+                                }) {
+                                    Text("フォロー中")
+                                        .padding(8)
+                                        .background(Color.gray)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
+                            } else {
+                                Button(action: {
+                                    followUser(user: user)
+                                }) {
+                                    Text("フォロー")
+                                        .padding(8)
+                                        .background(Color.green)
+                                        .foregroundColor(.white)
+                                        .cornerRadius(8)
+                                }
                             }
                         }
                     }
@@ -126,20 +138,6 @@ struct HomeView: View {
             }
     }
 
-    // フォロー状態を切り替える
-    private func toggleFollow(user: User) {
-        if isFollowing(user: user) {
-            unfollowUser(user: user)
-        } else {
-            followUser(user: user)
-        }
-    }
-
-    // フォロー状態を確認
-    private func isFollowing(user: User) -> Bool {
-        followingUsers.contains(where: { $0.uid == user.uid })
-    }
-
     // フォロー機能
     private func followUser(user: User) {
         guard let currentUserID = Auth.auth().currentUser?.uid else { return }
@@ -167,8 +165,8 @@ struct HomeView: View {
                     return
                 }
 
-                // フォロー解除したユーザーをローカルで削除
-                self.followingUsers.removeAll { $0.uid == user.uid }
+                // アンフォローしたユーザーをローカルで削除
+                self.followingUsers.removeAll(where: { $0.uid == user.uid })
             }
     }
 
