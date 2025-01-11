@@ -5,6 +5,7 @@ struct SignUpView: View {
     @State private var email = ""
     @State private var password = ""
     @State private var confirmPassword = ""
+    @State private var displayName = ""  // ユーザーが入力する任意のユーザーID
     @State private var errorMessage = ""
     @State private var isSignUpSuccessful = false
     @State private var showAlert = false
@@ -13,6 +14,10 @@ struct SignUpView: View {
     var body: some View {
         VStack(spacing: 20) {
             TextField("メールアドレス", text: $email)
+                .padding()
+                .textFieldStyle(RoundedBorderTextFieldStyle())
+
+            TextField("ユーザーID（任意の表示名）", text: $displayName) // ユーザーIDの入力
                 .padding()
                 .textFieldStyle(RoundedBorderTextFieldStyle())
 
@@ -62,12 +67,17 @@ struct SignUpView: View {
     }
 
     private func signUp() {
+        if email.isEmpty || displayName.isEmpty || password.isEmpty || confirmPassword.isEmpty {
+            errorMessage = "すべてのフィールドを入力してください"
+            return
+        }
+
         if password != confirmPassword {
             errorMessage = "パスワードが一致しません"
             return
         }
 
-        AuthManager.shared.signUp(email: email, password: password) { result in
+        SignUpManager.shared.signUp(email: email, password: password, displayName: displayName) { result in
             switch result {
             case .success:
                 print("新規登録成功")

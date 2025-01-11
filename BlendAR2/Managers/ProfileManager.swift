@@ -7,7 +7,6 @@ class ProfileManager {
 
     private init() {}
 
-    // プロフィール画像をアップロードする処理
     func uploadProfileImage(_ image: UIImage, completion: @escaping (Result<String, Error>) -> Void) {
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
             completion(.failure(NSError(domain: "ImageError", code: 0, userInfo: [NSLocalizedDescriptionKey: "画像の変換に失敗しました"])))
@@ -15,8 +14,6 @@ class ProfileManager {
         }
 
         let storageRef = Storage.storage().reference().child("profile_images/\(UUID().uuidString).jpg")
-
-        // StorageMetadataを使用
         let metadata = StorageMetadata()
         metadata.contentType = "image/jpeg"
 
@@ -30,13 +27,12 @@ class ProfileManager {
                 if let error = error {
                     completion(.failure(error))
                 } else if let downloadURL = url {
-                    completion(.success(downloadURL.absoluteString))  // ダウンロードURLを返す
+                    completion(.success(downloadURL.absoluteString))
                 }
             }
         }
     }
 
-    // ユーザープロフィールをFirestoreに更新する処理
     func updateUserProfile(uid: String, displayName: String, profileImageURL: String?, completion: @escaping (Result<Void, Error>) -> Void) {
         var data: [String: Any] = [
             "displayName": displayName
@@ -51,7 +47,7 @@ class ProfileManager {
             if let error = error {
                 completion(.failure(error))
             } else {
-                completion(.success(()))  // プロフィール更新成功
+                completion(.success(()))
             }
         }
     }

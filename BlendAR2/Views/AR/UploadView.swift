@@ -1,6 +1,7 @@
 import SwiftUI
 import RealityKit
 import CoreLocation
+import FirebaseAuth
 
 struct UploadView: View {
     @State private var selectedImage: UIImage?
@@ -61,7 +62,20 @@ struct UploadView: View {
     }
 
     private func uploadPost(image: UIImage, userLocation: CLLocationCoordinate2D, comment: String) {
-        PostManager.shared.uploadPost(image: image, userLocation: userLocation, comment: comment) { result in
+        guard let currentUser = Auth.auth().currentUser else {
+            print("ユーザーがログインしていません")
+            return
+        }
+
+        let displayName = currentUser.displayName ?? "Unknown User"
+
+        PostManager.shared.uploadPost(
+            image: image,
+            userLocation: userLocation,
+            comment: comment,
+            userID: currentUser.uid,
+            displayName: displayName
+        ) { result in
             switch result {
             case .success:
                 print("投稿が成功しました")

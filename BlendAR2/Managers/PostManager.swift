@@ -1,20 +1,31 @@
 import FirebaseFirestore
 import FirebaseStorage
-import FirebaseAuth
+import UIKit
 import CoreLocation
 
 class PostManager {
     static let shared = PostManager()
 
-    func uploadPost(image: UIImage, userLocation: CLLocationCoordinate2D, comment: String, completion: @escaping (Result<Void, Error>) -> Void) {
+    private init() {}
+
+    func uploadPost(
+        image: UIImage,
+        userLocation: CLLocationCoordinate2D,
+        comment: String,
+        userID: String,
+        displayName: String,
+        completion: @escaping (Result<Void, Error>) -> Void
+    ) {
+        let db = Firestore.firestore()
+        let storage = Storage.storage()
+        let postID = UUID().uuidString
+
         guard let imageData = image.jpegData(compressionQuality: 0.8) else {
-            completion(.failure(UploadError.invalidImage))
+            completion(.failure(NSError(domain: "InvalidImageData", code: 0, userInfo: nil)))
             return
         }
 
-        let storageRef = Storage.storage().reference()
-        let imageRef = storageRef.child("posts/\(UUID().uuidString).jpg")
-
+        let imageRef = storage.reference().child("posts/\(postID).jpg")
         imageRef.putData(imageData, metadata: nil) { _, error in
             if let error = error {
                 completion(.failure(error))
@@ -27,45 +38,28 @@ class PostManager {
                     return
                 }
 
-                guard let downloadURL = url else {
-                    completion(.failure(UploadError.failedToGetURL))
+                guard let imageURL = url?.absoluteString else {
+                    completion(.failure(NSError(domain: "InvalidImageURL", code: 0, userInfo: nil)))
                     return
                 }
 
-                self.savePostToFirestore(imageURL: downloadURL.absoluteString, userLocation: userLocation, comment: comment, completion: completion)
+                let postData: [String: Any] = [
+                    "imageURL": imageURL,
+                    "position": GeoPoint(latitude: userLocation.latitude, longitude: userLocation.longitude),
+                    "timestamp": Timestamp(),
+                    "comment": comment,
+                    "userID": userID,
+                    "displayName": displayName
+                ]
+
+                db.collection("posts").document(postID).setData(postData) { error in
+                    if let error = error {
+                        completion(.failure(error))
+                    } else {
+                        completion(.success(()))
+                    }
+                }
             }
         }
-    }
-
-    private func savePostToFirestore(imageURL: String, userLocation: CLLocationCoordinate2D, comment: String, completion: @escaping (Result<Void, Error>) -> Void) {
-        guard let userID = Auth.auth().currentUser?.uid else {
-            completion(.failure(UploadError.noUserID))
-            return
-        }
-
-        let post: [String: Any] = [
-            "imageURL": imageURL,
-            "userID": userID,
-            "timestamp": Timestamp(),
-            "position": [
-                "latitude": userLocation.latitude,
-                "longitude": userLocation.longitude
-            ],
-            "comment": comment
-        ]
-
-        Firestore.firestore().collection("posts").addDocument(data: post) { error in
-            if let error = error {
-                completion(.failure(error))
-            } else {
-                completion(.success(()))
-            }
-        }
-    }
-
-    enum UploadError: Error {
-        case invalidImage
-        case failedToGetURL
-        case noUserID
     }
 }

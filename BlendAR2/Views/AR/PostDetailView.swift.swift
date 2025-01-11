@@ -1,64 +1,45 @@
 import SwiftUI
-import FirebaseFirestore
-import SDWebImageSwiftUI
 
 struct PostDetailView: View {
-    @State var post: Post
-    @State private var updatedComment: String = ""
-    @State private var isSaving = false
-    var onSave: (Post) -> Void
+    var post: Post
 
     var body: some View {
-        NavigationView {
-            VStack(spacing: 20) {
-                if let imageURL = URL(string: post.imageURL) {
-                    WebImage(url: imageURL)
-                        .resizable()
+        VStack {
+            // 投稿の画像表示
+            if let url = URL(string: post.imageURL) {
+                AsyncImage(url: url) { image in
+                    image.resizable()
                         .scaledToFit()
-                        .frame(height: 200)
-                        .cornerRadius(8)
+                } placeholder: {
+                    ProgressView()
                 }
-
-                TextField("コメントを編集", text: $updatedComment)
-                    .textFieldStyle(RoundedBorderTextFieldStyle())
-                    .padding()
-
-                Button(action: saveChanges) {
-                    if isSaving {
-                        ProgressView()
-                    } else {
-                        Text("保存")
-                            .padding()
-                            .frame(maxWidth: .infinity)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(10)
-                    }
-                }
-                .disabled(isSaving || updatedComment.isEmpty)
-
-                Spacer()
-            }
-            .padding()
-            .onAppear {
-                updatedComment = post.comment
-            }
-            .navigationTitle("詳細")
-        }
-    }
-
-    private func saveChanges() {
-        isSaving = true
-        let updatedData: [String: Any] = ["comment": updatedComment]
-
-        Firestore.firestore().collection("posts").document(post.id).updateData(updatedData) { error in
-            isSaving = false
-            if let error = error {
-                print("コメント更新エラー: \(error.localizedDescription)")
+                .frame(height: 300)
             } else {
-                post.comment = updatedComment
-                onSave(post)
+                Text("画像を読み込めませんでした")
+                    .foregroundColor(.gray)
             }
+
+
+            // コメント表示
+            Text(post.comment)
+                .font(.title2)
+                .padding()
+
+            // 投稿者ID表示
+            Text("投稿者: \(post.userID)")
+                .font(.footnote)
+                .foregroundColor(.gray)
+                .padding()
+
+            // 投稿日時表示
+            Text("投稿日: \(post.timestamp.formatted())")
+                .font(.footnote)
+                .foregroundColor(.gray)
+                .padding()
+
+            Spacer()
         }
+        .navigationTitle("投稿の詳細")
+        .padding()
     }
 }

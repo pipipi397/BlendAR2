@@ -73,9 +73,7 @@ struct PostHistoryView: View {
             }
         }
         .sheet(item: $selectedPost) { post in
-            PostDetailView(post: post, onSave: { updatedPost in
-                updatePost(updatedPost)
-            })
+            PostDetailView(post: post) // 'onSave'引数を削除
         }
     }
 
@@ -104,17 +102,16 @@ struct PostHistoryView: View {
 
                 DispatchQueue.main.async {
                     print("取得した投稿数: \(documents.count)")
-                    self.posts = documents.map { doc in
-                        var post = Post(from: doc.data())
-                        post.id = doc.documentID
-                        return post
+                    self.posts = documents.compactMap { doc in
+                        try? doc.data(as: Post.self) // FirestoreデータをPostモデルにデコード
                     }
                 }
             }
     }
 
     private func deletePost(_ post: Post) {
-        Firestore.firestore().collection("posts").document(post.id).delete { error in
+        guard let postID = post.id else { return }
+        Firestore.firestore().collection("posts").document(postID).delete { error in
             if let error = error {
                 print("Firestore投稿削除エラー: \(error.localizedDescription)")
             } else {

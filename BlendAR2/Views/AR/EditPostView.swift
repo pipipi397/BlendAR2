@@ -26,7 +26,7 @@ struct EditPostView: View {
                         .cornerRadius(10)
                 }
             }
-            .disabled(isSaving)
+            .disabled(isSaving || updatedComment.isEmpty) // コメントが空の場合ボタンを無効化
             .padding()
         }
         .onAppear {
@@ -35,15 +35,24 @@ struct EditPostView: View {
     }
 
     private func saveChanges() {
-        isSaving = true
-        let updatedData: [String: Any] = ["comment": updatedComment]
+        guard let postId = post.id else {
+            print("投稿IDが存在しません")
+            return
+        }
 
-        Firestore.firestore().collection("posts").document(post.id).updateData(updatedData) { error in
+        isSaving = true
+        let updatedData: [String: Any] = [
+            "comment": updatedComment,
+            "timestamp": Timestamp() // 更新日時を記録
+        ]
+
+        Firestore.firestore().collection("posts").document(postId).updateData(updatedData) { error in
             isSaving = false
             if let error = error {
                 print("コメント更新エラー: \(error.localizedDescription)")
             } else {
                 post.comment = updatedComment
+                post.timestamp = Date() // ローカルの投稿データも更新
                 onSave(post) // 更新後リストをリフレッシュ
             }
         }

@@ -13,8 +13,8 @@ struct MapView: UIViewRepresentable {
     }
 
     func updateUIView(_ uiView: MKMapView, context: Context) {
-        uiView.removeAnnotations(uiView.annotations)
-        uiView.addAnnotations(viewModel.annotations)
+        uiView.removeAnnotations(uiView.annotations) // 現在のピンを削除
+        uiView.addAnnotations(viewModel.annotations) // 新しいピンを追加
         print("更新されたピン数: \(viewModel.annotations.count)")
     }
 

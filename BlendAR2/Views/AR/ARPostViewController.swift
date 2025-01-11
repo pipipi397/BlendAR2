@@ -5,7 +5,7 @@ import simd
 
 class ARPostViewController: UIViewController {
     var arView = ARView(frame: .zero)
-    var posts: [Post] = []
+    var posts: [ARPost] = []
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -31,7 +31,7 @@ class ARPostViewController: UIViewController {
         Firestore.firestore().collection("posts")
             .addSnapshotListener { snapshot, error in
                 guard let documents = snapshot?.documents else { return }
-                self.posts = documents.map { Post(from: $0.data()) }
+                self.posts = documents.compactMap { try? $0.data(as: ARPost.self) }
                 self.placeImagesInAR()
             }
     }
@@ -88,5 +88,16 @@ class ARPostViewController: UIViewController {
         let z = Float(longitude) / scaleFactor
         transform.columns.3 = SIMD4<Float>(x, 0, z, 1)
         return transform
+    }
+}
+
+struct ARPost: Identifiable, Codable {
+    @DocumentID var id: String?
+    var position: Position
+    var imageURL: String
+
+    struct Position: Codable {
+        var latitude: Double
+        var longitude: Double
     }
 }

@@ -1,34 +1,27 @@
 import Foundation
-import CoreLocation
 import FirebaseFirestore
+import CoreLocation
 
-struct Post: Identifiable {
-    var id: String
+struct Post: Identifiable, Codable {
+    @DocumentID var id: String?
     var imageURL: String
-    var position: CLLocationCoordinate2D
+    var position: GeoPoint
     var timestamp: Date
     var comment: String
     var userID: String
+    var displayName: String // 新たに追加
 
-    init(from data: [String: Any]) {
-        self.id = data["id"] as? String ?? UUID().uuidString
-        self.imageURL = data["imageURL"] as? String ?? ""
-        
-        if let positionData = data["position"] as? [String: Double],
-           let latitude = positionData["latitude"],
-           let longitude = positionData["longitude"] {
-            self.position = CLLocationCoordinate2D(latitude: latitude, longitude: longitude)
-        } else {
-            self.position = CLLocationCoordinate2D(latitude: 0.0, longitude: 0.0)
-        }
+    var coordinate: CLLocationCoordinate2D {
+        CLLocationCoordinate2D(latitude: position.latitude, longitude: position.longitude)
+    }
 
-        if let timestamp = data["timestamp"] as? Timestamp {
-            self.timestamp = timestamp.dateValue()
-        } else {
-            self.timestamp = Date()
-        }
-
-        self.comment = data["comment"] as? String ?? ""
-        self.userID = data["userID"] as? String ?? ""
+    enum CodingKeys: String, CodingKey {
+        case id
+        case imageURL
+        case position
+        case timestamp
+        case comment
+        case userID
+        case displayName
     }
 }

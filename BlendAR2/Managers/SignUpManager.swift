@@ -6,19 +6,17 @@ class SignUpManager {
 
     private init() {}
 
-    // 新規登録処理
     func signUp(email: String, password: String, displayName: String, completion: @escaping (Result<Void, Error>) -> Void) {
         Auth.auth().createUser(withEmail: email, password: password) { result, error in
             if let error = error {
-                completion(.failure(error))  // エラーがあれば返す
+                completion(.failure(error))
                 return
             }
 
             if let user = result?.user {
-                // 新規登録後にユーザープロフィールをFirestoreに保存
-                self.saveUserProfile(uid: user.uid, displayName: displayName) { success in
+                self.saveUserProfile(uid: user.uid, email: email, displayName: displayName) { success in
                     if success {
-                        completion(.success(()))  // サインアップ成功
+                        completion(.success(()))
                     } else {
                         completion(.failure(NSError(domain: "Auth", code: 0, userInfo: [NSLocalizedDescriptionKey: "ユーザープロフィールの保存に失敗しました"])))
                     }
@@ -27,19 +25,19 @@ class SignUpManager {
         }
     }
 
-    // Firestoreにユーザー情報を保存
-    func saveUserProfile(uid: String, displayName: String, completion: @escaping (Bool) -> Void) {
+    func saveUserProfile(uid: String, email: String, displayName: String, completion: @escaping (Bool) -> Void) {
         let db = Firestore.firestore()
         db.collection("users").document(uid).setData([
+            "uid": uid,
             "displayName": displayName,
-            "email": "", // 必要なフィールドを追加
-            "profileImageURL": ""
+            "email": email,
+            "profileImageURL": "" // 初期値
         ]) { error in
             if let error = error {
                 print("ユーザー情報の保存に失敗: \(error.localizedDescription)")
                 completion(false)
             } else {
-                completion(true) // ユーザー情報保存成功
+                completion(true)
             }
         }
     }
