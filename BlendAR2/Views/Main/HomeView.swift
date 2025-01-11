@@ -5,9 +5,9 @@ struct HomeView: View {
     @State private var searchText = ""
     @State private var searchResults: [User] = []
     @State private var followingUsers: [User] = []
-    @State private var timelinePosts: [Post] = [] // タイムラインに表示する投稿
-    @State private var showFollowingList = false // フォロー一覧を表示するかどうか
+    @State private var timelinePosts: [Post] = []
     @State private var errorMessage = ""
+    @State private var isLoading = false // 検索中の状態を管理
 
     var body: some View {
         NavigationView {
@@ -21,24 +21,13 @@ struct HomeView: View {
                         .padding()
                     
                     VStack(alignment: .leading) {
-                        Text(Auth.auth().currentUser?.displayName ?? "ユーザー名不明") // 現在のユーザーのdisplayNameを表示
+                        Text(Auth.auth().currentUser?.displayName ?? "不明なユーザー")
                             .font(.headline)
-                        Text("フォロー中: \(followingUsers.count) | フォロワー: 28") // フォロー数はダミー値
+                        Text("フォロー中: \(followingUsers.count)")
                             .font(.subheadline)
                     }
                     
                     Spacer()
-                    
-                    Button(action: {
-                        // プロフィール編集画面を表示
-                    }) {
-                        Text("プロフィールを編集")
-                            .font(.caption)
-                            .padding(8)
-                            .background(Color.blue)
-                            .foregroundColor(.white)
-                            .cornerRadius(8)
-                    }
                 }
                 .padding()
 
@@ -46,48 +35,39 @@ struct HomeView: View {
                 TextField("ユーザーを検索 (displayName)", text: $searchText, onCommit: searchUser)
                     .textFieldStyle(RoundedBorderTextFieldStyle())
                     .padding(.horizontal)
-                
+
                 // 検索結果の表示
-                if !searchResults.isEmpty {
+                if isLoading {
+                    ProgressView("検索中...")
+                        .padding()
+                } else if !searchResults.isEmpty {
                     List(searchResults, id: \.uid) { user in
                         HStack {
                             Text(user.displayName)
                                 .font(.headline)
                             Spacer()
                             Button(action: {
-                                followUser(user: user)
+                                toggleFollow(user: user)
                             }) {
-                                Text("フォロー")
+                                Text(isFollowing(user: user) ? "フォロー中" : "フォロー")
                                     .padding(8)
-                                    .background(Color.green)
+                                    .background(isFollowing(user: user) ? Color.blue : Color.green)
                                     .foregroundColor(.white)
                                     .cornerRadius(8)
                             }
                         }
                     }
-                }
-
-                // フォロー一覧ボタン
-                Button(action: {
-                    showFollowingList.toggle()
-                }) {
-                    Text("フォロー一覧")
-                        .font(.headline)
+                } else if !searchText.isEmpty {
+                    Text("該当するユーザーが見つかりません")
                         .padding()
-                        .frame(maxWidth: .infinity)
-                        .background(Color.gray.opacity(0.2))
-                        .cornerRadius(8)
-                        .padding(.horizontal)
-                }
-                .sheet(isPresented: $showFollowingList) {
-                    FollowingListView(users: followingUsers)
+                        .foregroundColor(.gray)
                 }
 
                 // タイムライン表示
                 if !timelinePosts.isEmpty {
                     List(timelinePosts, id: \.id) { post in
                         VStack(alignment: .leading) {
-                            Text(post.displayName ?? "Unknown") // 動的に取得したdisplayNameを表示
+                            Text(post.displayName)
                                 .font(.headline)
                             Text(post.comment)
                                 .font(.body)
@@ -114,19 +94,50 @@ struct HomeView: View {
 
     // 検索機能 (displayNameで検索)
     private func searchUser() {
+        guard !searchText.isEmpty else {
+            searchResults = [] // 入力が空の場合は検索結果をリセット
+            return
+        }
+
+        isLoading = true // 検索中の状態を表示
         Firestore.firestore().collection("users")
             .whereField("displayName", isGreaterThanOrEqualTo: searchText)
             .whereField("displayName", isLessThanOrEqualTo: searchText + "\u{f8ff}")
             .getDocuments { snapshot, error in
+                isLoading = false // 検索完了後にリセット
+
                 if let error = error {
                     errorMessage = error.localizedDescription
                     return
                 }
 
-                self.searchResults = snapshot?.documents.compactMap { doc in
+                guard let documents = snapshot?.documents else {
+                    searchResults = [] // 結果がない場合は空配列
+                    return
+                }
+
+                self.searchResults = documents.compactMap { doc in
                     try? doc.data(as: User.self)
-                } ?? []
+                }
+
+                if self.searchResults.isEmpty {
+                    print("該当するユーザーが見つかりません")
+                }
             }
+    }
+
+    // フォロー状態を切り替える
+    private func toggleFollow(user: User) {
+        if isFollowing(user: user) {
+            unfollowUser(user: user)
+        } else {
+            followUser(user: user)
+        }
+    }
+
+    // フォロー状態を確認
+    private func isFollowing(user: User) -> Bool {
+        followingUsers.contains(where: { $0.uid == user.uid })
     }
 
     // フォロー機能
@@ -142,6 +153,22 @@ struct HomeView: View {
 
                 // フォローしたユーザーをローカルで更新
                 self.followingUsers.append(user)
+            }
+    }
+
+    // アンフォロー機能
+    private func unfollowUser(user: User) {
+        guard let currentUserID = Auth.auth().currentUser?.uid else { return }
+
+        Firestore.firestore().collection("users").document(currentUserID)
+            .updateData(["following": FieldValue.arrayRemove([user.uid])]) { error in
+                if let error = error {
+                    errorMessage = error.localizedDescription
+                    return
+                }
+
+                // フォロー解除したユーザーをローカルで削除
+                self.followingUsers.removeAll { $0.uid == user.uid }
             }
     }
 
@@ -197,53 +224,10 @@ struct HomeView: View {
                             return
                         }
 
-                        let posts = snapshot?.documents.compactMap { doc in
+                        self.timelinePosts = snapshot?.documents.compactMap { doc in
                             try? doc.data(as: Post.self)
                         } ?? []
-
-                        // 投稿に紐づくdisplayNameを取得
-                        let userIDs = Set(posts.map { $0.userID })
-                        fetchUserDisplayNames(for: userIDs) { userDisplayNames in
-                            self.timelinePosts = posts.map { post in
-                                var updatedPost = post
-                                updatedPost.displayName = userDisplayNames[post.userID] ?? "Unknown"
-                                return updatedPost
-                            }
-                        }
                     }
             }
-    }
-
-    // ユーザー名を取得
-    private func fetchUserDisplayNames(for userIDs: Set<String>, completion: @escaping ([String: String]) -> Void) {
-        Firestore.firestore().collection("users")
-            .whereField("uid", in: Array(userIDs))
-            .getDocuments { snapshot, error in
-                if let error = error {
-                    print("ユーザー名取得エラー: \(error.localizedDescription)")
-                    completion([:]) // エラー時は空の辞書を返す
-                    return
-                }
-
-                let userDisplayNames = snapshot?.documents.reduce(into: [String: String]()) { result, doc in
-                    if let user = try? doc.data(as: User.self) {
-                        result[user.uid] = user.displayName
-                    }
-                } ?? [:]
-
-                completion(userDisplayNames)
-            }
-    }
-}
-
-struct FollowingListView: View {
-    let users: [User]
-
-    var body: some View {
-        List(users, id: \.uid) { user in
-            Text(user.displayName)
-                .font(.headline)
-        }
-        .navigationTitle("フォロー一覧")
     }
 }
