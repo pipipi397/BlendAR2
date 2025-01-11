@@ -2,7 +2,7 @@ import UIKit
 import RealityKit
 
 class ARPostDisplayController: UIViewController {
-    var postData: [String: String]?
+    var postData: [String: String]? // 投稿データを保持するプロパティ
 
     override func viewDidLoad() {
         super.viewDidLoad()
@@ -10,13 +10,21 @@ class ARPostDisplayController: UIViewController {
     }
 
     private func setupARView() {
-        guard let arView = self.view as? ARView else { return }
-        guard let comment = postData?["comment"], let imageURL = postData?["imageURL"] else { return }
+        let arView = ARView(frame: self.view.bounds)
+        self.view.addSubview(arView)
 
-        print("ARデータ: コメント - \(comment), 画像URL - \(imageURL)")
+        guard let postData = postData else {
+            print("投稿データがありません")
+            return
+        }
 
-        // 投稿画像をダウンロードしてAR空間に表示
-        downloadImage(from: URL(string: imageURL)!) { [weak self] image in
+        guard let imageURLString = postData["imageURL"],
+              let imageURL = URL(string: imageURLString) else {
+            print("画像URLが無効です")
+            return
+        }
+
+        downloadImage(from: imageURL) { [weak self] image in
             guard let self = self, let image = image, let cgImage = image.cgImage else { return }
 
             let aspectRatio = Float(image.size.width / image.size.height)
@@ -28,20 +36,25 @@ class ARPostDisplayController: UIViewController {
                 plane.model?.materials = [material]
             }
 
-            let anchor = AnchorEntity(world: [0, 0, -1]) // ユーザー前方1mに配置
+            let anchor = AnchorEntity(world: [0, 0, -1])
             anchor.addChild(plane)
             arView.scene.addAnchor(anchor)
         }
     }
 
     private func downloadImage(from url: URL, completion: @escaping (UIImage?) -> Void) {
-        let task = URLSession.shared.dataTask(with: url) { data, _, _ in
+        URLSession.shared.dataTask(with: url) { data, _, error in
+            if let error = error {
+                print("画像ダウンロードエラー: \(error.localizedDescription)")
+                completion(nil)
+                return
+            }
+
             if let data = data {
                 completion(UIImage(data: data))
             } else {
                 completion(nil)
             }
-        }
-        task.resume()
+        }.resume()
     }
 }

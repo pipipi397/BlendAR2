@@ -5,6 +5,10 @@ struct MapView: UIViewRepresentable {
     @ObservedObject var viewModel: MapViewModel
     @Binding var currentLocation: CLLocationCoordinate2D
 
+    func makeCoordinator() -> Coordinator {
+        Coordinator(self)
+    }
+
     func makeUIView(context: Context) -> MKMapView {
         let mapView = MKMapView()
         mapView.delegate = context.coordinator
@@ -16,12 +20,6 @@ struct MapView: UIViewRepresentable {
     func updateUIView(_ uiView: MKMapView, context: Context) {
         uiView.removeAnnotations(uiView.annotations)
         uiView.addAnnotations(viewModel.annotations)
-        print("マップに追加されたピン数: \(viewModel.annotations.count)")
-
-    }
-
-    func makeCoordinator() -> Coordinator {
-        Coordinator(self)
     }
 
     class Coordinator: NSObject, MKMapViewDelegate {
@@ -37,20 +35,18 @@ struct MapView: UIViewRepresentable {
                 return
             }
 
-            print("選択されたピン情報: \(annotation.title ?? "なし")")
+            if let post = parent.viewModel.posts.first(where: {
+                $0.position.latitude == annotation.coordinate.latitude &&
+                $0.position.longitude == annotation.coordinate.longitude
+            }) {
+                print("選択された投稿: \(post)")
 
-            if let comment = annotation.title,
-               let imageURL = annotation.subtitle {
-                if let post = parent.viewModel.posts.first(where: { $0.comment == comment && $0.imageURL == imageURL }) {
-                    if parent.viewModel.following.contains(post.userID) {
-                        let arPostController = ARPostDisplayController()
-                        arPostController.postData = ["comment": comment, "imageURL": imageURL]
-                        UIApplication.shared.windows.first?.rootViewController?.present(arPostController, animated: true)
-                    } else {
-                        print("フォローしていないユーザーの投稿です")
-                    }
-                }
+                let arView = UIHostingController(rootView: ARPostDisplayControllerWrapper(post: post))
+                UIApplication.shared.windows.first?.rootViewController?.present(arView, animated: true)
+            } else {
+                print("該当する投稿データが見つかりません")
             }
         }
+
     }
 }
